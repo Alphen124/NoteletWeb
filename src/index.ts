@@ -12,7 +12,7 @@ import { setRoutes } from './routes';
 
 const app = express();
 const PORT = process.env.PORT || 3030;
-const API_TARGET = process.env.API_URL || 'http://localhost:3001';
+const API_TARGET = process.env.API_URL || 'https://noteletwebapi-production.up.railway.app';
 
 // ============================================================
 // API Proxy Configuration (REST + WebSocket)
@@ -22,7 +22,6 @@ const API_TARGET = process.env.API_URL || 'http://localhost:3001';
 const apiProxy = createProxyMiddleware({
   target: API_TARGET,
   changeOrigin: true,
-  ws: true,
   pathFilter: ['/api/**', '/uploads/**'],
   on: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
