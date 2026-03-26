@@ -48,14 +48,13 @@ app.use(express.json());
 setRoutes(app);
 
 // ============================================================
-// Start Server — attach WebSocket upgrade handler
+// Start Server
 // ============================================================
-export { app };
+export default app;
 
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`✓ Frontend server is running on http://localhost:${PORT}`);
     console.log(`✓ API requests proxied to ${API_TARGET}`);
-    console.log(`✓ WebSocket proxy enabled for /api/chat/ws`);
   });
 }
