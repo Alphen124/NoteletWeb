@@ -1,8 +1,7 @@
 // ============================================================
 // Notelet — Global Configuration
 // ============================================================
-// Points all /api/* calls at the Railway Go backend.
-// LOCAL DEV: set to '' — Express at port 3030 proxies /api/* automatically.
-// PRODUCTION: Railway backend URL below.
+// Use '' so all /api/* calls go through the Express proxy (both local and Vercel).
+// The proxy in src/index.ts forwards them to the Go backend on Railway.
 // ============================================================
-window.NOTELET_API_URL = 'https://specialproblemprojectendnow-production.up.railway.app';
+window.NOTELET_API_URL = '';

@@ -1,25 +1,3 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCIoxTukUerVAn61ZJ9TVvr3h6HrD2y1dU",
-  authDomain: "notelet-79147.firebaseapp.com",
-  databaseURL: "https://notelet-79147-default-rtdb.firebaseio.com",
-  projectId: "notelet-79147",
-  storageBucket: "notelet-79147.firebasestorage.app",
-  messagingSenderId: "576385515118",
-  appId: "1:576385515118:web:1274866f37c62d2ffff07f",
-  measurementId: "G-6K1HYMFZX7"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 "use strict";
 // ========================================
 // Authentication & API Management
