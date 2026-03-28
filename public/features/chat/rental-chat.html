@@ -885,6 +885,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (imgUrl.startsWith('[')) {
           try { imgUrl = JSON.parse(imgUrl)[0] || ''; } catch(e) { imgUrl = ''; }
         }
+        if (imgUrl && !/^https?:\/\//.test(imgUrl) && !imgUrl.startsWith('/uploads/')) {
+          imgUrl = '/uploads/' + imgUrl.replace(/^uploads\//, '');
+        }
         if (imgUrl) {
           document.getElementById('devImgWrap').innerHTML =
             `<img src="${escHtml(imgUrl)}" alt="${escHtml(deviceName)}" />` +
@@ -1260,7 +1263,8 @@ function appendMsg(msg, bulk = false, isLocked = false) {
 
   let content = '';
   if (msg.imageUrl) {
-    content = `<div class="bubble-img" onclick="openLightbox('${escHtml(msg.imageUrl)}')"><img src="${escHtml(msg.imageUrl)}" alt="รูปภาพ" loading="lazy" /></div>`;
+    const _msgImg = (() => { const u = msg.imageUrl; if(/^https?:\/\//.test(u)) return u; if(u.startsWith('/uploads/')) return u; if(u.startsWith('uploads/')) return '/'+u; return '/uploads/'+u; })();
+    content = `<div class="bubble-img" onclick="openLightbox('${escHtml(_msgImg)}')"><img src="${escHtml(_msgImg)}" alt="รูปภาพ" loading="lazy" /></div>`;
   } else if (msg.fileUrl) {
     content = `<div class="bubble"><a href="${escHtml(msg.fileUrl)}" target="_blank" style="color:inherit;text-decoration:underline">📎 ${escHtml(msg.fileName || 'ไฟล์แนบ')}</a></div>`;
   } else {
