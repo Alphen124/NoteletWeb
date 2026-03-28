@@ -4,6 +4,7 @@
         { "src": "src/index.ts", "use": "@vercel/node" }
     ],
     "routes": [
+        { "src": "/uploads/(.*)", "dest": "https://noteletwebapi-production.up.railway.app/uploads/$1" },
         { "src": "/(.*)", "dest": "src/index.ts" }
     ]
 }
