@@ -1938,7 +1938,7 @@ function openEditModal(id) {
       const urls = JSON.parse(d.imageUrl);
       if (Array.isArray(urls)) {
         urls.forEach(url => {
-          const _u = url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1');
+          const _u = (() => { if(/^https?:\/\//.test(url)) return url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/,'$1')||url; if(url.startsWith('/uploads/')) return url; if(url.startsWith('uploads/')) return '/'+url; return '/uploads/'+url; })();
           const div = document.createElement('div');
           div.className = 'img-thumb';
           div.innerHTML = `<img src="${escHtml(_u)}" alt="current"><div class="img-thumb-label">ปัจจุบัน</div>`;
@@ -1947,7 +1947,7 @@ function openEditModal(id) {
       }
     } catch {
       if (d.imageUrl) {
-        const _su = d.imageUrl.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1');
+        const _su = (() => { const u = d.imageUrl; if(/^https?:\/\//.test(u)) return u.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/,'$1')||u; if(u.startsWith('/uploads/')) return u; if(u.startsWith('uploads/')) return '/'+u; return '/uploads/'+u; })();
         preview.innerHTML = `<div class="img-thumb"><img src="${escHtml(_su)}" alt="current"><div class="img-thumb-label">ปัจจุบัน</div></div>`;
       }
     }

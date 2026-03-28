@@ -339,7 +339,7 @@
           try { imageUrls = JSON.parse(d.imageUrl); if (!Array.isArray(imageUrls)) imageUrls = [d.imageUrl]; }
           catch { imageUrls = [d.imageUrl]; }
         }
-        imageUrls = imageUrls.map(url => url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1'));
+        imageUrls = imageUrls.map(url => { if(/^https?:\/\//.test(url)) return url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/,'$1')||url; if(url.startsWith('/uploads/')) return url; if(url.startsWith('uploads/')) return '/'+url; return '/uploads/'+url; });
         const mainImg = document.getElementById('mainImage');
         const thumbsWrap = document.querySelector('.device-thumbs');
         window._allImageUrls = imageUrls;

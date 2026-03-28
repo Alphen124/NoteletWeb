@@ -479,7 +479,7 @@
           firstImageUrl = device.imageUrl;
         }
       }
-      firstImageUrl = firstImageUrl.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1');
+      firstImageUrl = (() => { const u = firstImageUrl; if(/^https?:\/\//.test(u)) return u.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/,'$1')||u; if(u.startsWith('/uploads/')) return u; if(u.startsWith('uploads/')) return '/'+u; return '/uploads/'+u; })();
 
       article.innerHTML = `
         <div class="card-media-large" aria-hidden ${firstImageUrl ? `style="background-image:url('${firstImageUrl}'); background-size:cover;"` : ''}></div>
