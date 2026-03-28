@@ -243,6 +243,14 @@
         data.forEach(item => grid.appendChild(buildCard(item, tab === 'owner')));
       }
 
+      function normalizeImgUrl(url) {
+        if (!url) return '';
+        if (/^https?:\/\//.test(url)) return url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1') || url;
+        if (url.startsWith('/uploads/')) return url;
+        if (url.startsWith('uploads/')) return '/' + url;
+        return '/uploads/' + url;
+      }
+
       function buildCard(item, isOwner) {
         const el = document.createElement('article');
         el.className = 'rentout-card';
@@ -309,7 +317,7 @@
           if (media) {
             let imgUrl = String(item.imageUrl);
             if (imgUrl.startsWith('[')) { try { const a = JSON.parse(imgUrl); imgUrl = a[0] || ''; } catch(e) {} }
-            imgUrl = imgUrl.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1');
+            imgUrl = normalizeImgUrl(imgUrl);
             if (imgUrl) {
               media.style.backgroundImage = `url("${imgUrl.replace(/"/g, '\\"')}")`;
               media.style.backgroundSize = 'cover';
@@ -546,7 +554,7 @@
           if(media){
             let imgUrl = String(it.image);
             if (imgUrl.startsWith('[')) { try { const a = JSON.parse(imgUrl); imgUrl = a[0] || ''; } catch(e) {} }
-            imgUrl = imgUrl.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1');
+            imgUrl = normalizeImgUrl(imgUrl);
             if (imgUrl) {
               media.style.backgroundImage = `url("${imgUrl.replace(/"/g, '\\"')}")`;
               media.style.backgroundSize = 'cover';

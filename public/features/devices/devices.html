@@ -361,8 +361,11 @@
     }
 
     function normalizeImgUrl(url) {
-      if (!url) return url;
-      return url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1');
+      if (!url) return '';
+      if (/^https?:\/\//.test(url)) return url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1') || url;
+      if (url.startsWith('/uploads/')) return url;
+      if (url.startsWith('uploads/')) return '/' + url;
+      return '/uploads/' + url;
     }
     function parseImgUrl(raw) {
       if (!raw) return '';

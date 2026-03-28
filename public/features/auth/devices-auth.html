@@ -375,12 +375,19 @@
       renderPagination(total);
     }
 
+    function normalizeImgUrl(url) {
+      if (!url) return '';
+      if (/^https?:\/\//.test(url)) return url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1') || url;
+      if (url.startsWith('/uploads/')) return url;
+      if (url.startsWith('uploads/')) return '/' + url;
+      return '/uploads/' + url;
+    }
     function parseImgUrl(raw) {
       if (!raw) return '';
       if (raw.startsWith('[')) {
-        try { const a = JSON.parse(raw); return a[0] || ''; } catch(e) {}
+        try { const a = JSON.parse(raw); return normalizeImgUrl(a[0] || ''); } catch(e) {}
       }
-      return raw;
+      return normalizeImgUrl(raw);
     }
 
     const STATUS_LABEL = {

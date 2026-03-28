@@ -349,7 +349,7 @@ function push(m, bulk=false){
 
   let body='';
   if(m.imageUrl){
-    const _imgSrc = m.imageUrl.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1');
+    const _imgSrc = (() => { const u = m.imageUrl; if(/^https?:\/\//.test(u)) return u.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/,'$1')||u; if(u.startsWith('/uploads/')) return u; if(u.startsWith('uploads/')) return '/'+u; return '/uploads/'+u; })();
     body=`<div class="img-bubble" onclick="openLb('${esc(_imgSrc)}')"><img src="${esc(_imgSrc)}" loading="lazy"/></div>`;
   } else {
     body=`<div class="bubble">${esc(m.content)}</div>`;
@@ -1807,12 +1807,12 @@ function buildDeviceCard(d, wasDelivered) {
     try {
       const urls = JSON.parse(d.imageUrl);
       if (Array.isArray(urls) && urls.length > 0) {
-        const _first = urls[0].replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1');
+        const _first = (() => { const u = urls[0]; if(/^https?:\/\//.test(u)) return u.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/,'$1')||u; if(u.startsWith('/uploads/')) return u; if(u.startsWith('uploads/')) return '/'+u; return '/uploads/'+u; })();
         imgHtml = `<img src="${escHtml(_first)}" alt="${escHtml(d.name)}" loading="lazy" />`;
       }
     } catch {
       if (d.imageUrl) {
-        const _single = d.imageUrl.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1');
+        const _single = (() => { const u = d.imageUrl; if(/^https?:\/\//.test(u)) return u.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/,'$1')||u; if(u.startsWith('/uploads/')) return u; if(u.startsWith('uploads/')) return '/'+u; return '/uploads/'+u; })();
         imgHtml = `<img src="${escHtml(_single)}" alt="${escHtml(d.name)}" loading="lazy" />`;
       }
     }

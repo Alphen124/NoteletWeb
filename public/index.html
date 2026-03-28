@@ -796,12 +796,19 @@
       window.location.href = '/features/devices/rentdevice.html?id=' + encodeURIComponent(id);
     }
 
+    function normalizeImgUrl(url) {
+      if (!url) return '';
+      if (/^https?:\/\//.test(url)) { const m = url.match(/^\/uploads\//); return url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1') || url; }
+      if (url.startsWith('/uploads/')) return url;
+      if (url.startsWith('uploads/')) return '/' + url;
+      return '/uploads/' + url;
+    }
     function parseImg(raw) {
       if (!raw) return '';
       let url;
       if (raw.startsWith('[')) { try { const a = JSON.parse(raw); url = a[0] || ''; } catch(e) { url = raw; } }
       else { url = raw; }
-      return url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1');
+      return normalizeImgUrl(url);
     }
 
     function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
