@@ -726,6 +726,8 @@
           const arr = JSON.parse(room.imageUrl);
           if (Array.isArray(arr) && arr.length > 0) imgSrc = arr[0];
         } catch(e) {}
+        // Normalize: strip external host / ensure /uploads/ prefix
+        imgSrc = (() => { const u = imgSrc; if(/^https?:\/\//.test(u)) return u.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/,'$1')||u; if(u.startsWith('/uploads/')) return u; if(u.startsWith('uploads/')) return '/'+u; return '/uploads/'+u; })();
         imgHtml = '<img src="' + escapeHtml(imgSrc) + '" alt="' + escapeHtml(room.deviceName || '') + '" loading="lazy" />';
       } else {
         imgHtml = '<div class="cr-img-placeholder">📱</div>';
