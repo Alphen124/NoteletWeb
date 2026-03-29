@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/css/styles.css">
   <script src="/js/config.js"></script>
   <script src="/js/auth.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     body {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -173,6 +174,35 @@
     .admin-link a:hover {
       color: #374151;
     }
+    .google-btn {
+      width: 100%;
+      padding: 14px 24px;
+      background: #ffffff;
+      color: #374151;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .google-btn:hover {
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+      transform: translateY(-1px);
+    }
+    .google-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .google-btn svg { flex-shrink: 0; }
     .error-message {
       background: #fee2e2;
       border: 1px solid #fecaca;
@@ -231,7 +261,19 @@
           </button>
         </form>
 
-        <div class="register-link">
+        <div class="divider"><span>or</span></div>
+
+        <button id="googleBtn" class="google-btn" type="button">
+          <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.85l6.09-6.09C34.46 3.08 29.5 1 24 1 14.82 1 7.07 6.48 3.59 14.24l7.09 5.51C12.36 13.52 17.73 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.52 24.5c0-1.64-.15-3.22-.42-4.75H24v9h12.7c-.55 2.98-2.2 5.5-4.68 7.19l7.19 5.58C43.47 37.26 46.52 31.36 46.52 24.5z"/>
+            <path fill="#FBBC05" d="M10.68 28.25A14.51 14.51 0 0 1 9.5 24c0-1.48.25-2.91.68-4.25l-7.09-5.51A23.93 23.93 0 0 0 0 24c0 3.86.92 7.51 2.55 10.74l8.13-6.49z"/>
+            <path fill="#34A853" d="M24 47c6.48 0 11.93-2.15 15.9-5.83l-7.19-5.58C30.68 37.5 27.52 38.5 24 38.5c-6.27 0-11.64-4.02-13.32-9.75l-8.13 6.49C6.07 43.52 14.45 47 24 47z"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div class="register-link" style="margin-top:24px">
           <p>Don't have an account? <a href="/features/auth/register.html">Create one here</a></p>
         </div>
         
@@ -322,6 +364,65 @@
       const errorDiv = document.getElementById('errorMessage');
       errorDiv.textContent = message;
       errorDiv.style.display = 'block';
+    }
+
+    // ============================================================
+    // Supabase Google OAuth
+    // ============================================================
+    const _supabaseClient = (typeof supabase !== 'undefined' && window.SUPABASE_URL && window.SUPABASE_ANON_KEY &&
+      window.SUPABASE_URL !== 'YOUR_SUPABASE_URL')
+      ? supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+      : null;
+
+    // Handle OAuth callback: only process when Google redirects back (URL hash contains access_token)
+    (async () => {
+      if (!_supabaseClient) return;
+      if (!window.location.hash.includes('access_token')) return;
+      const { data: { session } } = await _supabaseClient.auth.getSession();
+      if (session && session.access_token) {
+        await _supabaseClient.auth.signOut(); // clear Supabase session after exchange
+        await _exchangeSupabaseToken(session.access_token);
+      }
+    })();
+
+    document.getElementById('googleBtn').addEventListener('click', async () => {
+      if (!_supabaseClient) {
+        showError('Google login is not configured. Please contact the administrator.');
+        return;
+      }
+      const btn = document.getElementById('googleBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#667eea" stroke-width="3" stroke-dasharray="31.4" stroke-dashoffset="10"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/></circle></svg> Redirecting to Google...`;
+      const { error } = await _supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.href.split('?')[0] }
+      });
+      if (error) {
+        showError('Google sign-in failed: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.85l6.09-6.09C34.46 3.08 29.5 1 24 1 14.82 1 7.07 6.48 3.59 14.24l7.09 5.51C12.36 13.52 17.73 9.5 24 9.5z"/><path fill="#4285F4" d="M46.52 24.5c0-1.64-.15-3.22-.42-4.75H24v9h12.7c-.55 2.98-2.2 5.5-4.68 7.19l7.19 5.58C43.47 37.26 46.52 31.36 46.52 24.5z"/><path fill="#FBBC05" d="M10.68 28.25A14.51 14.51 0 0 1 9.5 24c0-1.48.25-2.91.68-4.25l-7.09-5.51A23.93 23.93 0 0 0 0 24c0 3.86.92 7.51 2.55 10.74l8.13-6.49z"/><path fill="#34A853" d="M24 47c6.48 0 11.93-2.15 15.9-5.83l-7.19-5.58C30.68 37.5 27.52 38.5 24 38.5c-6.27 0-11.64-4.02-13.32-9.75l-8.13 6.49C6.07 43.52 14.45 47 24 47z"/></svg> Continue with Google`;
+      }
+    });
+
+    async function _exchangeSupabaseToken(accessToken) {
+      try {
+        const response = await fetch('/api/auth/supabase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token: accessToken })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          localStorage.setItem('access_token', data.data.access_token);
+          localStorage.setItem('refresh_token', data.data.refresh_token);
+          localStorage.setItem('user', JSON.stringify(data.data.user));
+          window.location.href = '/';
+        } else {
+          showError(data.message || 'Google login failed. Only @kmitl.ac.th emails are allowed.');
+        }
+      } catch (err) {
+        showError('An error occurred during Google login.' );
+      }
     }
 
   </script>

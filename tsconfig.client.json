@@ -3,6 +3,7 @@
     "target": "ES2020",
     "module": "none",
     "lib": ["ES2020", "DOM"],
+    "types": ["node"],
     "outDir": "./public",
     "rootDir": "./src/client",
     "strict": true,
