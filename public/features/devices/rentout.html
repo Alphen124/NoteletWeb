@@ -1656,8 +1656,14 @@
     function connectNotifWS() {
       const token = localStorage.getItem('access_token');
       if (!token) return;
-      const wsScheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${wsScheme}//${window.location.host}/api/chat/ws?token=${encodeURIComponent(token)}&room=general`);
+      // Vercel serverless does not support WebSocket upgrades, so connect directly
+      // to the Go backend on Railway instead of routing through location.host.
+      const apiBase = (window.NOTELET_API_URL && window.NOTELET_API_URL !== '')
+        ? window.NOTELET_API_URL
+        : 'https://noteletwebapi-production.up.railway.app';
+      const wsProto = apiBase.startsWith('https') ? 'wss' : 'ws';
+      const wsHost = apiBase.replace(/^https?:\/\//, '');
+      const ws = new WebSocket(`${wsProto}://${wsHost}/api/chat/ws?token=${encodeURIComponent(token)}&room=general`);
       ws.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data);
