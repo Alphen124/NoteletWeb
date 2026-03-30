@@ -1636,13 +1636,18 @@ async function confirmRental() {
   if (new Date(s) > new Date(e)) { alert('วันเริ่มต้นต้องอยู่ก่อนหรือเท่ากับวันสิ้นสุด'); return; }
 
   let renterUserId = parseInt(QP.renterId) || 0;
-  // Fallback: extract renterId from room name patterns:
+  // Fallback: extract renterId (and requestNo) from room name patterns:
   //   dev-{deviceId}-u-{userId}
   //   dev-{deviceId}-u-{userId}-req-{requestNo}
+  const _room = wsRoom || QP.room || '';
   if (!renterUserId) {
-    const room = wsRoom || QP.room || '';
-    const m = room.match(/dev-\d+-u-(\d+)/);
+    const m = _room.match(/dev-\d+-u-(\d+)/);
     if (m) renterUserId = parseInt(m[1]) || 0;
+  }
+  // If requestNo not set from URL, try to read it from the room name
+  if (!requestNo) {
+    const mReq = _room.match(/req-(\d+)/);
+    if (mReq) requestNo = parseInt(mReq[1]) || 0;
   }
   if (!renterUserId) {
     alert('ไม่พบข้อมูลผู้เช่า — กรุณาเปิดหน้าแชทจากลิงก์ที่มี renterId');
@@ -1681,6 +1686,7 @@ async function confirmRental() {
         endDate:      e,
         totalPrice:   totalPrice,
         note:         n,
+        ...(requestNo ? { requestNo } : {}),
       }),
     });
 
