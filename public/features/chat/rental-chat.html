@@ -1659,19 +1659,56 @@ async function confirmRental() {
   }
   if (!confirm('ยืนยันการเช่าอุปกรณ์นี้? ระบบจะบันทึกข้อมูลลงฐานข้อมูลทันที')) return;
 
-  const btn = document.getElementById('confirmRentalBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ กำลังบันทึก...';
+  // const btn = document.getElementById('confirmRentalBtn');
+  // btn.disabled = true;
+  // btn.textContent = '⏳ กำลังบันทึก...';
 
-  const _token = localStorage.getItem('access_token');
-  if (!_token) {
-    alert('กรุณาเข้าสู่ระบบก่อน');
-    btn.disabled = false;
-    btn.textContent = '✅ ยืนยันการเช่า (เจ้าของ)';
-    return;
-  }
+  // const _token = localStorage.getItem('access_token');
+  // if (!_token) {
+  //   alert('กรุณาเข้าสู่ระบบก่อน');
+  //   btn.disabled = false;
+  //   btn.textContent = '✅ ยืนยันการเช่า (เจ้าของ)';
+  //   return;
+  // }
 
-  try {
+  // try {
+  //   const totalPrice = parseFloat(calcTotal(s, e, p) || '0');
+  //   const res = await fetch('/api/chat/confirm-rental', {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'Authorization': 'Bearer ' + _token,
+  //     },
+  //     body: JSON.stringify({
+  //       deviceNo:     deviceId,
+  //       renterUserId: renterUserId,
+  //       startDate:    s,
+  //       endDate:      e,
+  //       totalPrice:   totalPrice,
+  //       note:         n,
+  //       ...(requestNo ? { requestNo } : {}),
+  //     }),
+  //   });
+
+  //   const json = await res.json();
+  //   if (!res.ok || !json.success) {
+  //     throw new Error(json.message || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
+  //   }
+      const btn = document.getElementById('confirmRentalBtn');
+if (btn.disabled) return; // ป้องกันการกดปุ่มซ้ำ
+
+btn.disabled = true;
+btn.textContent = '⏳ กำลังบันทึก...';
+
+const _token = localStorage.getItem('access_token');
+if (!_token) {
+  alert('กรุณาเข้าสู่ระบบก่อน');
+  btn.disabled = false;
+  btn.textContent = '✅ ยืนยันการเช่า (เจ้าของ)';
+  return;
+}
+
+    try {
     const totalPrice = parseFloat(calcTotal(s, e, p) || '0');
     const res = await fetch('/api/chat/confirm-rental', {
       method: 'POST',
@@ -1679,20 +1716,18 @@ async function confirmRental() {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + _token,
       },
-      body: JSON.stringify({
-        deviceNo:     deviceId,
-        renterUserId: renterUserId,
-        startDate:    s,
-        endDate:      e,
-        totalPrice:   totalPrice,
-        note:         n,
-        ...(requestNo ? { requestNo } : {}),
-      }),
+      body: JSON.stringify({ startDate: s, endDate: e, price: totalPrice }),
     });
 
-    const json = await res.json();
-    if (!res.ok || !json.success) {
-      throw new Error(json.message || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
+    if (!res.ok) throw new Error('การยืนยันการเช่าล้มเหลว');
+    const data = await res.json();
+    alert('การเช่าสำเร็จ');
+    } catch (err) {
+    console.error(err);
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+    } finally {
+    btn.disabled = false;
+    btn.textContent = '✅ ยืนยันการเช่า (เจ้าของ)';
     }
 
     /* ─── บันทึกสำเร็จ: แสดง confirmed card ─── */
@@ -1731,11 +1766,11 @@ async function confirmRental() {
     wsSend({ type: 'chat', roomId: wsRoom, content: '__CONFIRMED__' });
     wsSend({ type: 'chat', roomId: wsRoom, content: `🎉 การเช่าได้รับการยืนยันแล้ว! ${thaiDate(s)} → ${thaiDate(e)} รวม ${t} บาท | เลขที่: #${json.data.requestNo} | สถานะอุปกรณ์: ${deviceStatusLabel}` });
 
-  } catch (err) {
-    btn.disabled = false;
-    btn.textContent = '✅ ยืนยันการเช่า (เจ้าของ)';
-    alert('เกิดข้อผิดพลาด: ' + err.message);
-  }
+  // } catch (err) {
+  //   btn.disabled = false;
+  //   btn.textContent = '✅ ยืนยันการเช่า (เจ้าของ)';
+  //   alert('เกิดข้อผิดพลาด: ' + err.message);
+  // }
 }
 
 /* ─── Mini calendar builder ──────────────────────────────────── */
