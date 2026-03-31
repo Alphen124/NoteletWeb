@@ -65,6 +65,11 @@ export function setRoutes(app: Application): void {
     res.sendFile(path.join(__dirname, '..', 'public', 'devicehistory.html'));
   });
 
+  // Renter information page
+  app.get('/renterinfo', (_req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'features', 'devices', 'renterinfo.html'));
+  });
+
   // Simple health check
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok' });

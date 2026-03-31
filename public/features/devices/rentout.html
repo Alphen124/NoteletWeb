@@ -98,6 +98,90 @@
     .req-empty { text-align:center; padding:60px 20px; color:#aaa; }
     .req-empty .icon { font-size:48px; margin-bottom:12px; }
 
+    /* ── Renter Profile Button ──────────────────────────────────── */
+    .btn-view-renter-profile {
+      flex:1; padding:9px 12px; background:#f0f4ff; color:#043873;
+      border:1.5px solid #b8c8f0; border-radius:8px; font-size:13px;
+      font-weight:600; cursor:pointer; transition:all .2s; white-space:nowrap;
+    }
+    .btn-view-renter-profile:hover { background:#dbeafe; border-color:#93c5fd; }
+
+    /* ── Renter Profile Modal ────────────────────────────────────── */
+    .rp-overlay {
+      position:fixed; inset:0; background:rgba(4,20,60,.45);
+      z-index:1300; display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition:opacity .22s;
+    }
+    .rp-overlay.open { opacity:1; pointer-events:all; }
+    .rp-modal {
+      background:#fff; border-radius:18px; width:92%; max-width:520px;
+      max-height:88vh; overflow-y:auto;
+      box-shadow:0 16px 56px rgba(4,20,60,.22);
+      padding:26px 28px 28px; position:relative;
+      transform:translateY(22px); transition:transform .22s;
+    }
+    .rp-overlay.open .rp-modal { transform:translateY(0); }
+    .rp-modal-close {
+      position:absolute; top:14px; right:16px;
+      background:none; border:none; font-size:22px; cursor:pointer;
+      color:#9ca3af; line-height:1; transition:color .15s;
+    }
+    .rp-modal-close:hover { color:#374151; }
+    .rp-modal h3 { font-size:17px; font-weight:700; color:#043873; margin-bottom:18px; padding-right:26px; }
+
+    /* Profile header */
+    .rp-profile-header {
+      display:flex; align-items:center; gap:14px;
+      padding:14px 16px; background:#f8faff;
+      border-radius:12px; border:1px solid #e0eaf8; margin-bottom:18px;
+    }
+    .rp-avatar {
+      width:52px; height:52px; border-radius:50%; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:20px; font-weight:700; color:#fff;
+      background:linear-gradient(135deg,#043873,#0a5ba8);
+    }
+    .rp-name  { font-size:16px; font-weight:700; color:#1e2d4a; }
+    .rp-sub   { font-size:13px; color:#6b7280; margin-top:2px; }
+
+    /* Stats */
+    .rp-stats-grid { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+    .rp-stat-box {
+      flex:1; min-width:100px;
+      padding:12px 14px; background:#f8faff; border-radius:10px;
+      border:1px solid #e8eef8; text-align:center;
+    }
+    .rp-stat-val { font-size:22px; font-weight:700; color:#043873; }
+    .rp-star { color:#e5e7eb; }
+    .rp-star.filled { color:#FFC000; }
+    .rp-stat-label { font-size:11px; color:#9ca3af; margin-top:3px; }
+
+    /* Section titles */
+    .rp-section-title {
+      font-size:11px; font-weight:700; color:#7b8ab8;
+      text-transform:uppercase; letter-spacing:.8px;
+      margin-bottom:12px; padding-bottom:6px;
+      border-bottom:1px solid #f0f4ff;
+    }
+
+    /* Review cards */
+    .rp-review-item {
+      padding:12px 14px; background:#fafafa; border-radius:10px;
+      border:1px solid #eef0f8; margin-bottom:10px;
+    }
+    .rp-review-item:last-child { margin-bottom:0; }
+    .rp-review-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+    .rp-review-stars { font-size:16px; letter-spacing:1px; }
+    .rp-review-date  { font-size:11px; color:#bbb; }
+    .rp-review-device { font-size:12px; color:#4F9CF9; font-weight:600; margin-bottom:4px; }
+    .rp-review-text  { font-size:13px; color:#444; line-height:1.55; margin-bottom:4px; }
+    .rp-review-reply { font-size:12px; color:#4F9CF9; margin-bottom:4px; }
+    .rp-reviewer     { font-size:12px; color:#888; font-style:italic; }
+
+    .rp-loading    { text-align:center; padding:24px; color:#bbb; font-size:13px; }
+    .rp-no-reviews { text-align:center; padding:28px 0; color:#bbb; }
+    .rp-no-reviews .icon { font-size:36px; margin-bottom:8px; }
+
     /* ── Chat Inbox ──────────────────────────────────────────────── */
     .chat-inbox {
       display:grid;
@@ -864,6 +948,7 @@
         <div class="req-total">฿${Number(r.totalPrice || 0).toFixed(2)}</div>
         ${r.note ? `<div class="req-note">📝 ${escapeHtml(r.note)}</div>` : ''}
         ${actions ? `<div class="req-actions">${actions}</div>` : ''}
+        ${mode === 'incoming' ? `<div class="req-actions" style="margin-top:6px"><button class="btn-view-renter-profile" onclick="openRenterProfileModal(${Number(r.renterUserId)||0},'${escapeHtml(name).replace(/'/g,'&#x27;')}','${escapeHtml(r.renterEmail||'').replace(/'/g,'&#x27;')}')">&#x1F464; ดูประวัติและรีวิวผู้เช่า</button></div>` : ''}
       </div>`;
     }
 
@@ -1103,7 +1188,8 @@
           </div>
         </div>
 
-        <!-- ① คะแนนอุปกรณ์ (ดาวอย่างเดียว → บันทึกลง Device.Rating) -->
+        <!-- รีวิวผู้เช่า (ไม่มีคะแนนอุปกรณ์) -->
+        <!-- ① คะแนนอุปกรณ์ (เฝันผู้เช่า: renter เท่านั้น) → Device.Rating -->
         <div id="urDeviceStarsSection" style="margin-bottom:18px;padding-bottom:16px;border-bottom:1.5px solid #eef0f5">
           <div class="review-label" style="margin-bottom:8px">
             ⭐ คะแนนอุปกรณ์
@@ -1118,7 +1204,7 @@
           </div>
         </div>
 
-        <!-- ② คะแนนบุคคล (ดาว + ข้อความ → บันทึกลง UserReview) -->
+        <!-- ② คะแนนเจ้าของ/ผู้เช่า → reviews table -->
         <div class="review-label" style="margin-bottom:8px">
           👤 คะแนน <span id="urPersonLabel">บุคคล</span>
           <span style="color:#bbb;font-weight:400;font-size:11px">(บังคับ)</span>
@@ -1731,7 +1817,7 @@
       if (writeRole)   writeRole.textContent   = role === 'renter' ? '(เจ้าของอุปกรณ์)' : '(ผู้เช่าอุปกรณ์)';
       if (titleEl)     titleEl.textContent     = role === 'renter' ? '⭐ รีวิวเจ้าของ' : '⭐ รีวิวผู้เช่า';
       if (personLabel) personLabel.textContent = role === 'renter' ? 'เจ้าของอุปกรณ์' : 'ผู้เช่า';
-      // แสดง device stars เฉพาะผู้เช่า (renter) เท่านั้น
+      // แสดง device stars เฉพาะผู้เช่า (renter) รีวิวเจ้าของเท่านั้น
       if (deviceStarsSection) deviceStarsSection.style.display = role === 'renter' ? '' : 'none';
       if (starsEl)     Array.from(starsEl.querySelectorAll('.star')).forEach(s=>s.classList.remove('active'));
       if (deviceStarsEl) Array.from(deviceStarsEl.querySelectorAll('.star')).forEach(s=>s.classList.remove('active'));
@@ -1806,7 +1892,7 @@
       const personStars = starsEl       ? starsEl.querySelectorAll('.star.active').length       : 0;
       const text        = textEl        ? textEl.value.trim()                                   : '';
       if (isRenter && !deviceStars) { alert('กรุณาเลือกคะแนนอุปกรณ์ (1–5 ดาว)'); return; }
-      if (!personStars)             { alert('กรุณาเลือกคะแนนบุคคล (1–5 ดาว)'); return; }
+      if (!personStars)             { alert('กรุณาเลือกคะแนน' + (isRenter ? 'เจ้าของอุปกรณ์' : 'ผู้เช่า') + ' (1–5 ดาว)'); return; }
       if (!activeRequestNo)         { alert('ไม่พบรายการเช่า'); return; }
       const token = localStorage.getItem('access_token') || '';
       if (!token) { alert('กรุณาเข้าสู่ระบบก่อน'); return; }
@@ -1814,7 +1900,7 @@
       submitBtn.disabled    = true;
       submitBtn.textContent = 'กำลังบันทึก...';
       try {
-        // 1️⃣ บันทึกคะแนนอุปกรณ์ (เฉพาะผู้เช่า) → Review table → trigger อัพเดท Device.Rating อัตโนมัติ
+        // 1️⃣ บันทึกคะแนนอุปกรณ์ (renter เท่านั้น) → Device.Rating
         if (isRenter && activeDeviceNo) {
           const devRes = await fetch(`/api/devices/${activeDeviceNo}/reviews`, {
             method: 'POST',
@@ -1826,7 +1912,7 @@
             console.warn('Device review warning:', d.message || 'HTTP ' + devRes.status);
           }
         }
-        // 2️⃣ บันทึกคะแนนบุคคล → UserReview table
+        // 2️⃣ บันทึกคะแนนบุคคล → reviews table (reviewuserid=ผู้รีวิว, revieweuserid=คู่อีกฝ่าย)
         const res = await fetch('/api/reviews', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
@@ -1863,6 +1949,243 @@
 
     window.openUserReviewModal = openModal;
   })();
+  </script>
+
+  <!-- ── Renter Profile Modal ──────────────────────────────────────────
+       API contract:
+       GET /api/users/:userId/renter
+       Authorization: Bearer <access_token>
+
+       Response 200:
+       {
+         "success": true,
+         "data": {
+           "userId": 123,
+           "fname": "สมชาย",
+           "lname": "ใจดี",
+           "email": "somchai@example.com",
+           "tel": "0812345678",
+           "avatarUrl": "/uploads/avatars/xxx.jpg",   (optional)
+           "stats": {
+             "totalCompletedRentals": 8,
+             "averageRating": 4.5,
+             "reviewCount": 5
+           },
+           "reviews": [
+             {
+               "reviewNo": 1,
+               "requestNo": 42,
+               "reviewUserId": 10,
+               "revieweUserId": 123,
+               "reviewRole": "owner",
+               "rating": 5,
+               "description": "ผู้เช่าดีมาก รับผิดชอบ คืนตรงเวลา",
+               "replyText": null,
+               "repliedAt": null,
+               "deviceName": "MacBook Pro 13\"",
+               "reviewerName": "สุดา มีสุข",
+               "createdAt": "2026-01-01T10:00:00Z",
+               "updatedAt": "2026-01-01T10:00:00Z"
+             }
+           ]
+         }
+       }
+       Response 401: { "success": false, "message": "unauthorized" }
+       Response 404: { "success": false, "message": "user not found" }
+
+       Reviews table columns (DB):
+         reviewno, requestno, reviewuserid, revieweuserid,
+         reviewrole, rating, description, replytext,
+         repliedat, createdat, updatedat
+  ──────────────────────────────────────────────────────────────────── -->
+  <div id="rpOverlay" class="rp-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="rpModalTitle">
+    <div class="rp-modal">
+      <button class="rp-modal-close" id="rpClose" aria-label="ปิด">&times;</button>
+      <h3 id="rpModalTitle">&#x1F464; ประวัติและรีวิวผู้เช่า</h3>
+
+      <!-- Profile header -->
+      <div class="rp-profile-header">
+        <div class="rp-avatar" id="rpAvatar">?</div>
+        <div>
+          <div class="rp-name" id="rpName">—</div>
+          <div class="rp-sub"  id="rpEmail">—</div>
+          <div class="rp-sub"  id="rpTel" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="rp-section-title">&#x1F4CA; สถิติผู้เช่า</div>
+      <div id="rpStats" class="rp-stats-grid">
+        <div class="rp-loading">กำลังโหลด...</div>
+      </div>
+
+      <!-- Reviews received -->
+      <div class="rp-section-title" style="margin-top:4px">&#x2B50; รีวิวที่ได้รับจากเจ้าของอุปกรณ์</div>
+      <div id="rpReviews">
+        <div class="rp-loading">กำลังโหลดรีวิว...</div>
+      </div>
+
+      <div style="margin-top:16px;text-align:right">
+        <button id="rpCloseBtn" style="padding:9px 22px;background:#f1f5f9;color:#374151;border:1px solid #d1d5db;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ── Renter Profile Modal ─────────────────────────────────── */
+    (function () {
+      'use strict';
+
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+          ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
+        );
+      }
+
+      function starsHtml(rating, size) {
+        const n = Math.round(Number(rating) || 0);
+        const sz = size || 16;
+        return Array.from({length: 5}, (_, i) =>
+          `<span class="rp-star${i < n ? ' filled' : ''}" style="font-size:${sz}px">★</span>`
+        ).join('');
+      }
+
+      function fmtDate(d) {
+        if (!d) return '';
+        try { return new Date(d).toLocaleDateString('th-TH', {year:'numeric',month:'short',day:'numeric'}); }
+        catch (e) { return String(d); }
+      }
+
+      function openOverlay() {
+        const el = document.getElementById('rpOverlay');
+        el.setAttribute('aria-hidden','false');
+        el.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeOverlay() {
+        const el = document.getElementById('rpOverlay');
+        el.setAttribute('aria-hidden','true');
+        el.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+
+      /**
+       * openRenterProfileModal(userId, name, email)
+       * Called from "ดูประวัติและรีวิวผู้เช่า" button in each incoming request card.
+       *
+       * Calls: GET /api/users/:userId/renter
+       * Authorization: Bearer <access_token>
+       */
+      async function openRenterProfileModal(userId, name, email) {
+        /* Seed display names immediately */
+        const displayName = name || 'ผู้เช่า';
+        document.getElementById('rpModalTitle').textContent = '👤 ประวัติและรีวิว — ' + displayName;
+        document.getElementById('rpAvatar').textContent = displayName.charAt(0).toUpperCase();
+        document.getElementById('rpName').textContent  = displayName;
+        document.getElementById('rpEmail').textContent = email || '';
+        const telEl = document.getElementById('rpTel');
+        telEl.style.display = 'none';
+        document.getElementById('rpStats').innerHTML   = '<div class="rp-loading">กำลังโหลด...</div>';
+        document.getElementById('rpReviews').innerHTML = '<div class="rp-loading">กำลังโหลดรีวิว...</div>';
+        openOverlay();
+
+        if (!userId) {
+          document.getElementById('rpStats').innerHTML =
+            '<div class="rp-loading">ไม่พบข้อมูลผู้ใช้ (userId ไม่ถูกต้อง)</div>';
+          document.getElementById('rpReviews').innerHTML = '';
+          return;
+        }
+
+        const token = localStorage.getItem('access_token') || '';
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+
+        try {
+          /* ──────────────────────────────────────────────────────────────
+             API: GET /api/users/:userId/renter-profile
+             Reviews array item fields (from GetRenterProfile):
+               reviewId, rating, reviewText, deviceName, reviewerName, createdAt
+          ────────────────────────────────────────────────────────────── */
+          const res  = await fetch('/api/users/' + userId + '/renter-profile', { headers });
+          const json = await res.json();
+
+          if (res.ok && json.success && json.data) {
+            renderProfile(json.data);
+          } else {
+            throw new Error(json.message || 'ไม่พบข้อมูลผู้เช่า');
+          }
+        } catch (e) {
+          document.getElementById('rpStats').innerHTML =
+            `<div class="rp-loading">⚠️ ${esc(e.message)}</div>`;
+          document.getElementById('rpReviews').innerHTML = '';
+        }
+      }
+
+      function renderProfile(data) {
+        /* Update name/email from API (may be more complete than what the card had) */
+        const fullName = [data.fname, data.lname].filter(Boolean).join(' ') || data.email || 'ผู้เช่า';
+        document.getElementById('rpName').textContent  = fullName;
+        document.getElementById('rpEmail').textContent = data.email || '';
+        document.getElementById('rpAvatar').textContent = fullName.charAt(0).toUpperCase();
+
+        const telEl = document.getElementById('rpTel');
+        if (data.tel) { telEl.textContent = '☎️ ' + data.tel; telEl.style.display = ''; }
+        else { telEl.style.display = 'none'; }
+
+        /* Stats */
+        const s   = data.stats || {};
+        const avg = typeof s.averageRating === 'number' ? s.averageRating : 0;
+        document.getElementById('rpStats').innerHTML = `
+          <div class="rp-stat-box">
+            <div class="rp-stat-val" style="font-size:20px">${starsHtml(avg, 18)}</div>
+            <div class="rp-stat-label">${esc(avg.toFixed(1))} / 5.0 คะแนนเฉลี่ย</div>
+          </div>
+          <div class="rp-stat-box">
+            <div class="rp-stat-val">${esc(String(s.totalCompletedRentals || 0))}</div>
+            <div class="rp-stat-label">เช่าสำเร็จทั้งหมด</div>
+          </div>
+          <div class="rp-stat-box">
+            <div class="rp-stat-val">${esc(String(s.reviewCount || 0))}</div>
+            <div class="rp-stat-label">รีวิวที่ได้รับ</div>
+          </div>
+        `;
+
+        /* Reviews */
+        const reviews = Array.isArray(data.reviews) ? data.reviews : [];
+        const rvEl = document.getElementById('rpReviews');
+        if (!reviews.length) {
+          rvEl.innerHTML = '<div class="rp-no-reviews"><div class="icon">📭</div><p>ยังไม่มีรีวิว</p></div>';
+          return;
+        }
+        rvEl.innerHTML = reviews.map(rv => `
+          <div class="rp-review-item">
+            <div class="rp-review-top">
+              <div class="rp-review-stars">${starsHtml(rv.rating, 15)}</div>
+              <div class="rp-review-date">${esc(fmtDate(rv.createdAt))}</div>
+            </div>
+            ${rv.deviceName ? `<div class="rp-review-device">📱 ${esc(rv.deviceName)}</div>` : ''}
+            ${rv.reviewText ? `<div class="rp-review-text">${esc(rv.reviewText)}</div>` : ''}
+            ${rv.replyText   ? `<div class="rp-review-reply">💬 <em>${esc(rv.replyText)}</em></div>` : ''}
+            ${rv.reviewerName ? `<div class="rp-reviewer">— ${esc(rv.reviewerName)}</div>` : ''}
+          </div>
+        `).join('');
+      }
+
+      /* Close handlers */
+      document.getElementById('rpClose').addEventListener('click', closeOverlay);
+      document.getElementById('rpCloseBtn').addEventListener('click', closeOverlay);
+      document.getElementById('rpOverlay').addEventListener('click', function (e) {
+        if (e.target === this) closeOverlay();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.getElementById('rpOverlay').classList.contains('open')) {
+          closeOverlay();
+        }
+      });
+
+      /* Expose globally so onclick attributes in dynamic cards can call it */
+      window.openRenterProfileModal = openRenterProfileModal;
+    })();
   </script>
  </body>
 </html>

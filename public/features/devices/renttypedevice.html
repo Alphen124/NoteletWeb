@@ -148,7 +148,7 @@
         const allBorrow = [].concat(...Object.values(borrowSamples));
         const all = allRent.concat(allBorrow);
         const ql = q.toLowerCase();
-        return all.filter(it => it.name.toLowerCase().includes(ql) || it.lessor.toLowerCase().includes(ql));
+        return all.filter(it => it.name.toLowerCase().includes(ql) || it.lessor.toLowerCase().includes(ql) || (it.description || '').toLowerCase().includes(ql));
       }
 
       // For non-search (Try Renting browsing), show RENT devices only.

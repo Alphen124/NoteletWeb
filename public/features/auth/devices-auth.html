@@ -237,6 +237,8 @@
         <option value="price-asc">ราคา: น้อย → มาก</option>
         <option value="price-desc">ราคา: มาก → น้อย</option>
         <option value="name">ชื่อ A-Z</option>
+        <option value="spec-desc">สเปค: สูง → ต่ำ</option>
+        <option value="spec-asc">สเปค: ต่ำ → สูง</option>
       </select>
     </div>
   </div>
@@ -333,6 +335,27 @@
       renderPage();
     }
 
+    function calcSpecScore(description) {
+      if (!description) return 0;
+      const specs = { cpu: 5, ram: 3, ssd: 2 }; // Weight factors
+      let score = 0;
+
+      const desc = description.toLowerCase();
+      if (desc.includes('i9') || desc.includes('ryzen 9')) score += specs.cpu * 9;
+      else if (desc.includes('i7') || desc.includes('ryzen 7')) score += specs.cpu * 7;
+      else if (desc.includes('i5') || desc.includes('ryzen 5')) score += specs.cpu * 5;
+
+      if (desc.match(/\b(32|64)\s?gb\s?ram\b/)) score += specs.ram * 64;
+      else if (desc.match(/\b(16)\s?gb\s?ram\b/)) score += specs.ram * 16;
+      else if (desc.match(/\b(8)\s?gb\s?ram\b/)) score += specs.ram * 8;
+
+      if (desc.match(/\b(1|2)\s?tb\s?ssd\b/)) score += specs.ssd * 2000;
+      else if (desc.match(/\b(512)\s?gb\s?ssd\b/)) score += specs.ssd * 512;
+      else if (desc.match(/\b(256)\s?gb\s?ssd\b/)) score += specs.ssd * 256;
+
+      return score;
+    }
+
     function getFiltered() {
       const q    = document.getElementById('searchInput').value.trim().toLowerCase();
       const cat  = document.querySelector('.filter-tab.active')?.dataset.cat || 'all';
@@ -341,8 +364,8 @@
       let list = allDevices.filter(d => {
         const name  = (d.name || '').toLowerCase();
         const type  = (d.type || '').toLowerCase();   // DeviceTypeName: notebook / macbook / อื่นๆ
-        const owner = (d.ownerName || d.ownerEmail || '').toLowerCase();
-        const matchQ   = !q || name.includes(q) || type.includes(q) || owner.includes(q);
+        const desc  = (d.description || '').toLowerCase();
+        const matchQ   = !q || name.includes(q) || type.includes(q) || desc.includes(q);
         const matchCat = cat === 'all'
           || (cat === 'computer' && type.includes('notebook'))
           || (cat === 'macbook'  && type.includes('macbook'))
@@ -353,6 +376,8 @@
       if (sort === 'price-asc')  list.sort((a,b) => (a.price||0) - (b.price||0));
       if (sort === 'price-desc') list.sort((a,b) => (b.price||0) - (a.price||0));
       if (sort === 'name')       list.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+      if (sort === 'spec-desc')  list.sort((a,b) => calcSpecScore(b.description) - calcSpecScore(a.description));
+      if (sort === 'spec-asc')   list.sort((a,b) => calcSpecScore(a.description) - calcSpecScore(b.description));
       return list;
     }
 
