@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Notelet — ประวัติการยืม</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/config.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/chat-notifications.js"></script>
+  <style>
+    /* Borrow cards: blue background + white text */
+    .rentout-card.borrow-card { box-shadow: 0 4px 12px rgba(37,99,235,.13); }
+    .rentout-card.borrow-card .card-content {
+      background: var(--primary, #2563eb);
+      border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+    }
+    .rentout-card.borrow-card .device-name,
+    .rentout-card.borrow-card .meta.small,
+    .rentout-card.borrow-card .lessee-name { color: #fff; }
+    .rentout-card.borrow-card .card-divider { background: rgba(255,255,255,.65); }
+    .rentout-card.borrow-card .badge { background: rgba(255,255,255,.18); color: #fff; }
+    .rentout-card.borrow-card .avatar { background: transparent; border: 6px solid #fff; box-shadow: none; }
+
+    /* History tabs */
+    .history-tabs { display: flex; gap: 0; margin-bottom: 28px; border-bottom: 2px solid #e5e7eb; }
+    .tab-btn {
+      background: none; border: none; padding: 11px 24px;
+      font-size: 15px; font-weight: 500; color: #6b7280; cursor: pointer;
+      border-bottom: 3px solid transparent; margin-bottom: -2px;
+      transition: color .18s, border-color .18s;
+    }
+    .tab-btn.active { color: var(--primary, #2563eb); border-bottom-color: var(--primary, #2563eb); font-weight: 700; }
+    .tab-btn:hover:not(.active) { color: #374151; }
+
+    /* Action buttons inside cards */
+    .card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .btn-action-primary {
+      background: rgba(255,255,255,.22); color: #fff;
+      border: 1.5px solid rgba(255,255,255,.5); border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: background .18s;
+    }
+    .btn-action-primary:hover:not(:disabled) { background: rgba(255,255,255,.36); }
+    .btn-action-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-action-secondary {
+      background: rgba(255,255,255,.1); color: #fff;
+      border: 1.5px solid rgba(255,255,255,.4); border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: background .18s;
+    }
+    .btn-action-secondary:hover:not(:disabled) { background: rgba(255,255,255,.24); }
+    .btn-action-secondary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-action-danger {
+      background: rgba(239,68,68,.18); color: #fca5a5;
+      border: 1.5px solid rgba(239,68,68,.4); border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: background .18s;
+    }
+    .btn-action-danger:hover:not(:disabled) { background: rgba(239,68,68,.32); }
+    .btn-action-danger:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Status badge overrides */
+    .badge-pending   { background: rgba(245,158,11,.2); color: #fbbf24; }
+    .badge-confirmed { background: rgba(34,197,94,.2);  color: #4ade80; }
+    .badge-active    { background: rgba(59,130,246,.25); color: #93c5fd; }
+    .badge-completed { background: rgba(255,255,255,.18); color: #d1d5db; }
+    .badge-rejected  { background: rgba(239,68,68,.22); color: #fca5a5; }
+
+    /* Loading / empty states */
+    .history-loading { text-align: center; padding: 56px 0; color: #9ca3af; font-size: 15px; grid-column: 1/-1; }
+
+    /* Term badge inside card */
+    .term-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.75); margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo" aria-label="Notelet home">
+        <div class="logo-mark" aria-hidden></div>
+        <div class="logo-text">NOTELET</div>
+      </a>
+      <nav class="nav">
+        <a href="/features/devices/devices.html">ค้นหาอุปกรณ์</a>
+        <a href="/features/devices/rentout.html">จัดการอุปกรณ์เช่า</a>
+        <a href="/features/management/giveout.html">ยืมอุปกรณ์</a>
+        <a href="/features/management/borrowhistory.html" class="active">ประวัติการยืม</a>
+      </nav>
+      <div class="header-actions" id="headerActions">
+        <a href="/features/auth/login.html" class="btn-login">Login</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="rentout-page">
+    <div class="container">
+      <section class="rentout-head centered">
+        <h1>ประวัติการยืม</h1>
+        <p class="sub" style="color:#6b7280;margin-top:4px;font-size:14px">รายการคำขอยืมอุปกรณ์ทั้งหมด</p>
+      </section>
+
+      <!-- Tab switcher -->
+      <div class="history-tabs" role="tablist">
+        <button class="tab-btn active" data-tab="borrower" role="tab" aria-selected="true">คำขอยืมของฉัน</button>
+        <button class="tab-btn" data-tab="lender" role="tab" aria-selected="false" id="lenderTab">คำขอยืมที่ได้รับ</button>
+      </div>
+
+      <section class="rentout-list">
+        <div id="historyCards" class="rentout-cards three-up" aria-live="polite">
+          <div class="history-loading">กำลังโหลด...</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    if (typeof NoteLetAuth !== 'undefined') NoteLetAuth.requireAuth();
+  </script>
+  <script>
+    (function () {
+      'use strict';
+
+      /* ── Helpers ──────────────────────────────────────────────────────── */
+      function esc(s) {
+        return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+
+      function fmtDate(d) {
+        if (!d) return '';
+        try { return new Date(d).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }); }
+        catch (e) { return String(d); }
+      }
+
+      function getToken() { return localStorage.getItem('access_token') || ''; }
+
+      function getPayload() {
+        try {
+          const t = getToken();
+          if (!t) return null;
+          return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        } catch { return null; }
+      }
+
+      function isBorrowRequest(item) {
+        /* A borrow request has totalPrice === 0 (free) */
+        return item.totalPrice === 0 || item.totalPrice === '0' || item.totalPrice === null || item.totalPrice === undefined || Number(item.totalPrice) === 0;
+      }
+
+      function normalizeImgUrl(url) {
+        if (!url) return '';
+        if (/^https?:\/\//.test(url)) return url.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/, '$1') || url;
+        if (url.startsWith('/uploads/')) return url;
+        if (url.startsWith('uploads/')) return '/' + url;
+        return '/uploads/' + url;
+      }
+
+      /* ── Status map ────────────────────────────────────────────────────── */
+      const STATUS_MAP = {
+        'Request Pending'   : { label: 'รอการยืนยัน',                cls: 'badge-pending' },
+        'Booking Confirmed' : { label: 'ยืนยันแล้ว – รอรับอุปกรณ์',  cls: 'badge-confirmed' },
+        'Rental Active'     : { label: 'กำลังยืม (รับอุปกรณ์แล้ว)',  cls: 'badge-active' },
+        'Rental Completed'  : { label: 'คืนอุปกรณ์แล้ว (เสร็จสิ้น)', cls: 'badge-completed' },
+        'rejected'          : { label: 'ถูกปฏิเสธ',                  cls: 'badge-rejected' },
+        'cancelled'         : { label: 'ยกเลิกแล้ว',                  cls: 'badge-completed' },
+      };
+
+      function statusBadge(status) {
+        const s = STATUS_MAP[status] || { label: esc(status), cls: 'badge-active' };
+        return `<span class="badge ${s.cls}">${esc(s.label)}</span>`;
+      }
+
+      /* ── State ─────────────────────────────────────────────────────────── */
+      let currentTab   = 'borrower';
+      let borrowerData = [];
+      let lenderData   = [];
+
+      /* ── Load data ─────────────────────────────────────────────────────── */
+      async function loadData() {
+        const grid = document.getElementById('historyCards');
+        grid.innerHTML = '<div class="history-loading">กำลังโหลด...</div>';
+        const token = getToken();
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+        try {
+          const [outRes, incRes] = await Promise.all([
+            fetch('/api/rental-requests/outgoing', { headers }),
+            fetch('/api/rental-requests/incoming', { headers }),
+          ]);
+          const [out, inc] = await Promise.all([outRes.json(), incRes.json()]);
+          const allOut = Array.isArray(out.data) ? out.data : [];
+          const allInc = Array.isArray(inc.data) ? inc.data : [];
+          /* Filter only borrow-type (free / price=0) */
+          borrowerData = allOut.filter(isBorrowRequest);
+          lenderData   = allInc.filter(isBorrowRequest);
+        } catch (e) {
+          grid.innerHTML = '<div class="history-loading">เกิดข้อผิดพลาดในการโหลดข้อมูล — กรุณาลองใหม่</div>';
+          console.error(e);
+          return;
+        }
+
+        /* Auto-select tab */
+        const urlTab = new URLSearchParams(window.location.search).get('tab');
+        if (urlTab === 'lender' || urlTab === 'borrower') {
+          currentTab = urlTab;
+        } else if (lenderData.length > 0 && borrowerData.length === 0) {
+          currentTab = 'lender';
+        }
+
+        /* Sync tab UI */
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          const active = b.dataset.tab === currentTab;
+          b.classList.toggle('active', active);
+          b.setAttribute('aria-selected', String(active));
+        });
+
+        /* Badge count on lender tab */
+        const pendingCount = lenderData.filter(r => r.status === 'Request Pending').length;
+        const lenderTab = document.getElementById('lenderTab');
+        if (lenderTab && pendingCount > 0) {
+          lenderTab.textContent = `คำขอยืมที่ได้รับ (${pendingCount})`;
+        }
+
+        renderTab(currentTab);
+      }
+
+      /* ── Render ────────────────────────────────────────────────────────── */
+      function renderTab(tab) {
+        currentTab = tab;
+        const grid = document.getElementById('historyCards');
+        const data = tab === 'borrower' ? borrowerData : lenderData;
+
+        if (!data.length) {
+          grid.innerHTML = '<p class="history-loading">ยังไม่มีรายการ</p>';
+          return;
+        }
+        grid.innerHTML = '';
+        data.forEach(item => grid.appendChild(buildCard(item, tab === 'lender')));
+      }
+
+      function buildCard(item, isLender) {
+        const el = document.createElement('article');
+        el.className = 'rentout-card borrow-card';
+        el.dataset.requestno = item.requestNo;
+        el.dataset.deviceno  = item.deviceNo;
+        el.dataset.status    = item.status || '';
+
+        const otherName = esc(isLender
+          ? (item.renterName || item.renterEmail || 'ผู้ยืม')
+          : (item.ownerName  || item.ownerEmail  || 'ผู้ให้ยืม'));
+        const otherRole = isLender ? 'ผู้ยืม' : 'ผู้ให้ยืม';
+
+        /* Term info (startDate / endDate represent the academic term) */
+        const termText = (item.startDate && item.endDate)
+          ? `${fmtDate(item.startDate)} — ${fmtDate(item.endDate)}`
+          : (item.startDate ? fmtDate(item.startDate) : '');
+
+        /* Build action buttons */
+        let actionBtns = '';
+        if (isLender) {
+          /* Lender view is read-only — borrow requests are managed by central staff */
+        } else {
+          if (item.status === 'Request Pending') {
+            actionBtns += `<button class="btn-action-danger btn-cancel-req" data-id="${item.requestNo}">✕ ยกเลิกคำขอ</button>`;
+          }
+        }
+
+        const actionsBlock = actionBtns
+          ? `<div class="card-actions">${actionBtns}</div>` : '';
+
+        el.innerHTML = `
+          <div class="card-media-large" aria-hidden></div>
+          <div class="card-content">
+            <h3 class="device-name">${esc(item.deviceName || '')}</h3>
+            <div class="meta small">สถานะ · ${statusBadge(item.status)}</div>
+            ${termText ? `<div class="meta small">ช่วงเทอม · ${esc(termText)}</div>` : ''}
+            ${item.note ? `<div class="meta small">หมายเหตุ · ${esc(item.note)}</div>` : ''}
+            <div class="card-divider"></div>
+            <div class="card-footer">
+              <div class="avatar" aria-hidden></div>
+              <div class="lessee">
+                <div class="lessee-name">${otherName}</div>
+                <div class="meta small">${otherRole}</div>
+              </div>
+            </div>
+            ${actionsBlock}
+          </div>`;
+
+        /* Set card image */
+        if (item.imageUrl) {
+          const media = el.querySelector('.card-media-large');
+          if (media) {
+            let imgUrl = String(item.imageUrl);
+            if (imgUrl.startsWith('[')) { try { const a = JSON.parse(imgUrl); imgUrl = a[0] || ''; } catch (e) {} }
+            imgUrl = normalizeImgUrl(imgUrl);
+            if (imgUrl) {
+              media.style.backgroundImage = `url("${imgUrl.replace(/"/g, '\\"')}")`;
+              media.style.backgroundSize = 'cover';
+              media.style.backgroundPosition = 'center';
+            }
+          }
+        }
+        return el;
+      }
+
+      /* ── Lifecycle actions ─────────────────────────────────────────────── */
+      async function patchRequest(requestNo, endpoint, btn, confirmMsg) {
+        if (confirmMsg && !confirm(confirmMsg)) return;
+        if (btn) { btn.disabled = true; btn.textContent = 'กำลังบันทึก...'; }
+        try {
+          const token = getToken();
+          const res = await fetch(`/api/rental-requests/${requestNo}/${endpoint}`, {
+            method: 'PATCH',
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+          });
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}));
+            throw new Error(d.message || 'HTTP ' + res.status);
+          }
+          await loadData();
+        } catch (e) {
+          alert('เกิดข้อผิดพลาด: ' + (e.message || 'กรุณาลองใหม่'));
+          if (btn) { btn.disabled = false; btn.textContent = '?'; }
+        }
+      }
+
+      /* ── Event wiring ──────────────────────────────────────────────────── */
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-selected', 'false');
+          });
+          btn.classList.add('active');
+          btn.setAttribute('aria-selected', 'true');
+          renderTab(btn.dataset.tab);
+        });
+      });
+
+      document.getElementById('historyCards').addEventListener('click', e => {
+        const approveBtn = e.target.closest('.btn-approve');
+        if (approveBtn) {
+          patchRequest(Number(approveBtn.dataset.id), 'confirm', approveBtn, 'อนุมัติคำขอยืมนี้?');
+          return;
+        }
+        const rejectBtn = e.target.closest('.btn-reject');
+        if (rejectBtn) {
+          patchRequest(Number(rejectBtn.dataset.id), 'reject', rejectBtn, 'ปฏิเสธคำขอยืมนี้?');
+          return;
+        }
+        const activeBtn = e.target.closest('.btn-mark-active');
+        if (activeBtn) {
+          patchRequest(Number(activeBtn.dataset.id), 'active', activeBtn, 'ยืนยันว่าได้ส่งอุปกรณ์ให้ผู้ยืมแล้ว?');
+          return;
+        }
+        const returnBtn = e.target.closest('.btn-mark-returned');
+        if (returnBtn) {
+          patchRequest(Number(returnBtn.dataset.id), 'returned', returnBtn, 'ยืนยันว่าได้รับคืนอุปกรณ์แล้ว? การดำเนินการนี้จะสิ้นสุดการยืม');
+          return;
+        }
+        const cancelBtn = e.target.closest('.btn-cancel-req');
+        if (cancelBtn) {
+          patchRequest(Number(cancelBtn.dataset.id), 'cancel', cancelBtn, 'ยืนยันการยกเลิกคำขอยืมนี้?');
+          return;
+        }
+      });
+
+      /* ── Boot ──────────────────────────────────────────────────────────── */
+      loadData();
+    })();
+  </script>
+</body>
+</html>

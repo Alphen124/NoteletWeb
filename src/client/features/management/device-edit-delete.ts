@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', function () {
     (document.getElementById('editPrice') as HTMLInputElement).value = card.dataset.price ?? '';
     (document.getElementById('editDescription') as HTMLTextAreaElement).value =
       card.dataset.description ?? '';
+    (document.getElementById('editSpecCpu') as HTMLInputElement).value = card.dataset.cpu ?? '';
+    (document.getElementById('editSpecRam') as HTMLSelectElement).value = card.dataset.ram ?? '';
+    // Parse stored storage value (e.g. "512GB SSD") into two selects
+    const _storageParts = (card.dataset.storage ?? '').split(' ');
+    (document.getElementById('editSpecStorageSize') as HTMLSelectElement).value = _storageParts[0] ?? '';
+    (document.getElementById('editSpecStorageType') as HTMLSelectElement).value = _storageParts[1] ?? '';
+    (document.getElementById('editSpecGpu') as HTMLInputElement).value = card.dataset.gpu ?? '';
 
     const previewContainer = document.getElementById('editImagePreview');
     if (previewContainer) previewContainer.innerHTML = '';
@@ -109,6 +116,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const priceRaw = (document.getElementById('editPrice') as HTMLInputElement).value;
     const price = isAdmin ? 0 : parseFloat(priceRaw);
     const description = (document.getElementById('editDescription') as HTMLTextAreaElement).value.trim();
+    const cpu = (document.getElementById('editSpecCpu') as HTMLInputElement).value.trim();
+    const ram = (document.getElementById('editSpecRam') as HTMLSelectElement).value;
+    const storageSize = (document.getElementById('editSpecStorageSize') as HTMLSelectElement).value;
+    const storageType = (document.getElementById('editSpecStorageType') as HTMLSelectElement).value;
+    const storage = [storageSize, storageType].filter(Boolean).join(' ');
+    const gpu = (document.getElementById('editSpecGpu') as HTMLInputElement).value.trim();
 
     if (!name || !type || (!isAdmin && !price)) {
       alert('Please fill in all required fields');
@@ -154,6 +167,10 @@ document.addEventListener('DOMContentLoaded', function () {
         type,
         price,
         description,
+        cpu,
+        ram,
+        storage,
+        gpu,
         imageUrl: imageUrls.length > 0 ? JSON.stringify(imageUrls) : '',
       };
 

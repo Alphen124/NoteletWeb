@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Notelet — จัดการคำขอยืม (เจ้าหน้าที่)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/config.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/chat-notifications.js"></script>
+  <style>
+    .rentout-card.borrow-card { box-shadow: 0 4px 12px rgba(37,99,235,.13); }
+    .rentout-card.borrow-card .card-content {
+      background: var(--primary, #2563eb);
+      border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+    }
+    .rentout-card.borrow-card .device-name,
+    .rentout-card.borrow-card .meta.small,
+    .rentout-card.borrow-card .lessee-name { color: #fff; }
+    .rentout-card.borrow-card .card-divider { background: rgba(255,255,255,.65); }
+    .rentout-card.borrow-card .badge { background: rgba(255,255,255,.18); color: #fff; }
+    .rentout-card.borrow-card .avatar { background: transparent; border: 6px solid #fff; box-shadow: none; }
+
+    .card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .btn-action-primary {
+      background: rgba(255,255,255,.22); color: #fff;
+      border: 1.5px solid rgba(255,255,255,.5); border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: background .18s;
+    }
+    .btn-action-primary:hover:not(:disabled) { background: rgba(255,255,255,.36); }
+    .btn-action-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-action-secondary {
+      background: rgba(255,255,255,.1); color: #fff;
+      border: 1.5px solid rgba(255,255,255,.4); border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: background .18s;
+    }
+    .btn-action-secondary:hover:not(:disabled) { background: rgba(255,255,255,.24); }
+    .btn-action-secondary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-action-danger {
+      background: rgba(239,68,68,.18); color: #fca5a5;
+      border: 1.5px solid rgba(239,68,68,.4); border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: background .18s;
+    }
+    .btn-action-danger:hover:not(:disabled) { background: rgba(239,68,68,.32); }
+    .btn-action-danger:disabled { opacity: .5; cursor: not-allowed; }
+
+    .badge-pending   { background: rgba(245,158,11,.2); color: #fbbf24; }
+    .badge-confirmed { background: rgba(34,197,94,.2);  color: #4ade80; }
+    .badge-active    { background: rgba(59,130,246,.25); color: #93c5fd; }
+    .badge-completed { background: rgba(255,255,255,.18); color: #d1d5db; }
+    .badge-rejected  { background: rgba(239,68,68,.22); color: #fca5a5; }
+
+    .history-loading { text-align: center; padding: 56px 0; color: #9ca3af; font-size: 15px; grid-column: 1/-1; }
+    .term-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.75); margin-top: 2px; }
+
+    .staff-badge {
+      display: inline-block; background: #7c3aed; color: #fff;
+      font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px;
+      margin-left: 10px; vertical-align: middle;
+    }
+    .btn-chat-staff {
+      background: rgba(255,255,255,.12); color: #fff;
+      border: 1.5px solid rgba(255,255,255,.35); border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: background .18s;
+    }
+    .btn-chat-staff:hover { background: rgba(255,255,255,.24); }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo" aria-label="Notelet home">
+        <div class="logo-mark" aria-hidden></div>
+        <div class="logo-text">NOTELET</div>
+      </a>
+      <nav class="nav">
+        <a href="/features/devices/devices.html">ค้นหาอุปกรณ์</a>
+        <a href="/features/management/staff-borrow.html" class="active">จัดการคำขอยืม</a>
+      </nav>
+      <div class="header-actions" id="headerActions">
+        <a href="/features/auth/login.html" class="btn-login">Login</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="rentout-page">
+    <div class="container">
+      <section class="rentout-head centered">
+        <h1>จัดการคำขอยืม <span class="staff-badge">เจ้าหน้าที่ส่วนกลาง</span></h1>
+        <p class="sub" style="color:#6b7280;margin-top:4px;font-size:14px">คำขอยืมอุปกรณ์ทั้งหมดในระบบ</p>
+      </section>
+
+      <section class="rentout-list">
+        <div id="staffCards" class="rentout-cards three-up" aria-live="polite">
+          <div class="history-loading">กำลังโหลด...</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    if (typeof NoteLetAuth !== 'undefined') NoteLetAuth.requireAuth();
+  </script>
+  <script>
+    (function () {
+      'use strict';
+
+      function esc(s) {
+        return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+
+      function fmtDate(d) {
+        if (!d) return '';
+        try { return new Date(d).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }); }
+        catch (e) { return String(d); }
+      }
+
+      function getToken() { return localStorage.getItem('access_token') || ''; }
+
+      function getPayload() {
+        try {
+          const t = getToken();
+          if (!t) return null;
+          return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        } catch { return null; }
+      }
+
+      /* Redirect non-staff users */
+      (function checkRole() {
+        const p = getPayload();
+        if (!p || !p.is_central_staff) {
+          alert('หน้านี้สำหรับเจ้าหน้าที่ส่วนกลางเท่านั้น');
+          window.location.href = '/';
+        }
+      })();
+
+      const STATUS_MAP = {
+        'Request Pending'   : { label: 'รอการยืนยัน',                cls: 'badge-pending' },
+        'Booking Confirmed' : { label: 'ยืนยันแล้ว – รอรับอุปกรณ์',  cls: 'badge-confirmed' },
+        'Rental Active'     : { label: 'กำลังยืม (รับอุปกรณ์แล้ว)',  cls: 'badge-active' },
+        'Rental Completed'  : { label: 'คืนอุปกรณ์แล้ว (เสร็จสิ้น)', cls: 'badge-completed' },
+        'returned'          : { label: 'คืนอุปกรณ์แล้ว (เสร็จสิ้น)', cls: 'badge-completed' },
+        'rejected'          : { label: 'ถูกปฏิเสธ',                  cls: 'badge-rejected' },
+        'cancelled'         : { label: 'ยกเลิกแล้ว',                  cls: 'badge-completed' },
+      };
+
+      function statusBadge(status) {
+        const s = STATUS_MAP[status] || { label: esc(status), cls: 'badge-active' };
+        return `<span class="badge ${s.cls}">${esc(s.label)}</span>`;
+      }
+
+      let data = [];
+
+      async function loadData() {
+        const grid = document.getElementById('staffCards');
+        grid.innerHTML = '<div class="history-loading">กำลังโหลด...</div>';
+        const token = getToken();
+        try {
+          const res = await fetch('/api/rental-requests/staff-incoming', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          const json = await res.json();
+          data = Array.isArray(json.data) ? json.data : [];
+          render();
+        } catch (e) {
+          grid.innerHTML = '<div class="history-loading">เกิดข้อผิดพลาดในการโหลดข้อมูล — กรุณาลองใหม่</div>';
+          console.error(e);
+        }
+      }
+
+      function buildCard(item) {
+        const status = item.status || '';
+        const isPending   = status === 'Request Pending';
+        const isConfirmed = status === 'Booking Confirmed';
+        const isActive    = status === 'Rental Active';
+        const isDone      = !isPending && !isConfirmed && !isActive;
+
+        const start = item.startDate ? fmtDate(item.startDate) : '';
+        const end   = item.endDate   ? fmtDate(item.endDate)   : '';
+        const term  = (start && end) ? `${start} – ${end}` : (start || end || '–');
+
+        const renterName = esc(item.renterName || `ผู้ใช้ #${item.renterUserId || ''}`);
+        const deviceName = esc(item.deviceName || `อุปกรณ์ #${item.deviceNo || ''}`);
+        const ownerName  = esc(item.ownerName  || item.ownerEmail || 'เจ้าของ');
+
+        let actions = '';
+        if (!isDone) {
+          if (isPending) {
+            actions = `
+              <button class="btn-action-primary btn-approve" data-id="${item.requestNo}">อนุมัติ</button>
+              <button class="btn-action-danger btn-reject" data-id="${item.requestNo}">ปฏิเสธ</button>`;
+          } else if (isConfirmed) {
+            actions = `<button class="btn-action-primary btn-mark-active" data-id="${item.requestNo}">ทำเครื่องหมายว่าส่งมอบแล้ว</button>`;
+          } else if (isActive) {
+            actions = `<button class="btn-action-secondary btn-mark-returned" data-id="${item.requestNo}">ทำเครื่องหมายว่าคืนแล้ว</button>`;
+          }
+        }
+
+        const chatBtn = `<button class="btn-chat-staff btn-open-chat"
+          data-deviceno="${item.deviceNo || ''}"
+          data-devicename="${deviceName}"
+          data-ownername="${ownerName}"
+          data-requestno="${item.requestNo || ''}"
+          >💬 แชทกับเจ้าของ</button>`;
+
+        return `
+          <div class="rentout-card borrow-card" data-request="${item.requestNo}">
+            <div class="card-image" style="background:#dbeafe;display:flex;align-items:center;justify-content:center;">
+              <svg width="48" height="48" fill="none" stroke="#2563eb" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a4 4 0 018 0v2"/></svg>
+            </div>
+            <div class="card-content">
+              <div class="device-name">${deviceName}</div>
+              <div class="meta small">ผู้ยืม: ${renterName}</div>
+              <div class="term-label">${esc(term)}</div>
+              <div class="card-divider"></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                ${statusBadge(status)}
+                <span style="font-size:11px;color:rgba(255,255,255,.7)">#{${item.requestNo}}</span>
+              </div>
+              ${actions ? `<div class="card-actions">${actions}${chatBtn}</div>` : `<div class="card-actions">${chatBtn}</div>`}
+            </div>
+          </div>`;
+      }
+
+      function render() {
+        const grid = document.getElementById('staffCards');
+        if (!data.length) {
+          grid.innerHTML = '<div class="history-loading">ไม่มีคำขอยืมในขณะนี้</div>';
+          return;
+        }
+        grid.innerHTML = data.map(buildCard).join('');
+        attachHandlers();
+      }
+
+      async function doAction(url, method, btnEl) {
+        if (btnEl) btnEl.disabled = true;
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+          });
+          if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            throw new Error(j.message || `HTTP ${res.status}`);
+          }
+          await loadData();
+        } catch (e) {
+          alert('เกิดข้อผิดพลาด: ' + e.message);
+          if (btnEl) btnEl.disabled = false;
+        }
+      }
+
+      function attachHandlers() {
+        document.querySelectorAll('.btn-approve').forEach(btn => {
+          btn.addEventListener('click', () => doAction(`/api/rental-requests/${btn.dataset.id}/confirm`, 'PATCH', btn));
+        });
+        document.querySelectorAll('.btn-reject').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (confirm('ยืนยันการปฏิเสธคำขอนี้?')) doAction(`/api/rental-requests/${btn.dataset.id}/reject`, 'PATCH', btn);
+          });
+        });
+        document.querySelectorAll('.btn-mark-active').forEach(btn => {
+          btn.addEventListener('click', () => doAction(`/api/rental-requests/${btn.dataset.id}/active`, 'PATCH', btn));
+        });
+        document.querySelectorAll('.btn-mark-returned').forEach(btn => {
+          btn.addEventListener('click', () => doAction(`/api/rental-requests/${btn.dataset.id}/returned`, 'PATCH', btn));
+        });
+        document.querySelectorAll('.btn-open-chat').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const p = new URLSearchParams({
+              deviceId:   btn.dataset.deviceno   || '',
+              deviceName: btn.dataset.devicename || '',
+              ownerName:  btn.dataset.ownername  || '',
+              requestNo:  btn.dataset.requestno  || '',
+              pricePerDay: '0',
+            });
+            window.location.href = `/features/chat/direct-chat.html?${p.toString()}`;
+          });
+        });
+      }
+
+      loadData();
+    })();
+  </script>
+</body>
+</html>

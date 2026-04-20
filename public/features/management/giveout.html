@@ -1,31 +1,181 @@
 ﻿<!doctype html>
-<html lang="en">
+<html lang="th">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Notelet — Give out</title>
+  <title>Notelet — ยืมอุปกรณ์</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
   <script src="/js/config.js"></script>
   <script src="/js/auth.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <style>
-    /* Department cards: blue background + white text (match screenshot) */
-    .rentout-card.borrow-card{ box-shadow:0px 4px 4px rgba(0,0,0,0.25); }
-    .rentout-card.borrow-card .card-content{ background:var(--primary); border-bottom-left-radius:12px; border-bottom-right-radius:12px; }
-    .rentout-card.borrow-card .device-name,
-    .rentout-card.borrow-card .meta.small,
-    .rentout-card.borrow-card .lessee-name{ color:#fff; }
-    .rentout-card.borrow-card .card-divider{ background:rgba(255,255,255,0.35); }
-    .rentout-card.borrow-card .badge{ background:rgba(255,255,255,0.18); color:#fff; }
-    .rentout-card.borrow-card .avatar{ background:transparent; border:6px solid #fff; box-shadow:none; }
+    /* ── Page header ─────────────────────────────────────── */
+    .give-hero { padding: 40px 0 10px; text-align: center; }
+    .give-hero h1 { font-size: 28px; font-weight: 700; margin: 0 0 6px; }
+    .give-hero .sub { color: #888; font-size: 14px; }
 
-    /* lighter blue confirm button near Status (Give out only) */
-    .rentout-card.borrow-card .btn-confirm{
-      background:#C4DEFD;
-      color:var(--blue);
+    /* ── Role badge + toggle ─────────────────────────────── */
+    .role-bar { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 14px 0 0; flex-wrap: wrap; }
+    .role-badge { font-size: 11px; padding: 3px 12px; border-radius: 20px; font-weight: 700; letter-spacing: 0.4px; }
+    .role-badge.lender  { background: var(--primary, #2563EB); color: #fff; }
+    .role-badge.borrower { background: #e6f0ff; color: var(--primary, #2563EB); }
+    .btn-role-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f0f4ff; border: 1.5px solid var(--primary, #2563EB);
+      color: var(--primary, #2563EB); border-radius: 8px; padding: 6px 18px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .btn-role-toggle:hover { background: var(--primary, #2563EB); color: #fff; }
+
+    /* ── Spec filter (borrower) ──────────────────────────── */
+    .spec-panel {
+      background: #f8faff; border: 1px solid #dce8fd; border-radius: 14px;
+      padding: 22px 24px; margin: 24px 0 28px;
+    }
+    .spec-panel h2 { font-size: 15px; font-weight: 700; margin: 0 0 16px; color: #1e3a5f; }
+    .spec-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .spec-grid .form-row { margin: 0; }
+    .spec-grid label { font-size: 12px; color: #555; margin-bottom: 4px; display: block; font-weight: 600; }
+    .spec-grid input, .spec-grid select {
+      width: 100%; padding: 8px 10px; border: 1px solid #d0ddf0;
+      border-radius: 8px; font-size: 13px; outline: none;
+      transition: border-color .15s;
+    }
+    .spec-grid input:focus, .spec-grid select:focus { border-color: var(--primary, #2563EB); }
+    .spec-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+    .btn-spec-search {
+      background: var(--primary, #2563EB); color: #fff; border: none;
+      border-radius: 8px; padding: 8px 24px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-spec-search:hover { opacity: .88; }
+    .btn-spec-reset {
+      background: #fff; color: #666; border: 1px solid #d0ddf0;
+      border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer;
     }
 
-    .rentout-head.centered .add-device-wrap{ margin-top:14px; }
+    /* ── Device cards ────────────────────────────────────── */
+    .rentout-card.borrow-card { box-shadow: 0 4px 12px rgba(37,99,235,.13); }
+    .rentout-card.borrow-card .card-content {
+      background: var(--primary, #2563EB);
+      border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+    }
+    .rentout-card.borrow-card .device-name,
+    .rentout-card.borrow-card .meta.small { color: #fff; }
+    .rentout-card.borrow-card .badge { background: rgba(255,255,255,.18); color: #fff; }
+
+    /* card action buttons */
+    .card-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .btn-card-edit {
+      background: rgba(255,255,255,.22); color: #fff;
+      border: 1.5px solid rgba(255,255,255,.5); border-radius: 6px;
+      padding: 5px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .btn-card-edit:hover { background: rgba(255,255,255,.38); }
+    .btn-card-del {
+      background: rgba(239,68,68,.18); color: #fca5a5;
+      border: 1.5px solid rgba(239,68,68,.4); border-radius: 6px;
+      padding: 5px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .btn-card-del:hover { background: rgba(239,68,68,.32); }
+    .btn-card-borrow {
+      background: #fff; color: var(--primary, #2563EB);
+      border: 1.5px solid #fff; border-radius: 6px;
+      padding: 5px 18px; font-size: 12px; font-weight: 700; cursor: pointer;
+      width: 100%;
+    }
+    .btn-card-borrow:hover { background: #e6f0ff; }
+
+    /* ── Lender top bar ──────────────────────────────────── */
+    .lender-bar { display: flex; align-items: center; justify-content: space-between; margin: 24px 0 20px; flex-wrap: wrap; gap: 12px; }
+    .lender-bar h2 { font-size: 18px; font-weight: 700; margin: 0; }
+    .btn-add-device {
+      background: var(--primary, #2563EB); color: #fff;
+      border: none; border-radius: 8px; padding: 9px 22px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .btn-add-device:hover { opacity: .88; }
+
+    /* ── Borrow modal extras ─────────────────────────────── */
+    .term-preview {
+      background: #f0f6ff; border: 1px solid #c5d9f7; border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; color: #1e3a5f; margin-top: 6px;
+    }
+    .term-preview strong { color: var(--primary, #2563EB); }
+    .spec-section-title { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .6px; margin: 14px 0 8px; }
+    .spec-inline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .spec-inline-grid .form-row { margin: 0; }
+
+    /* ── Dashboard ─────────────────────────────────────────── */
+    .dash-panel {
+      background: linear-gradient(135deg,#f0f6ff,#e8f2fe);
+      border: 1px solid #dce8fd; border-radius: 20px;
+      padding: 24px 26px; margin: 20px 0 28px;
+    }
+    .dash-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:8px; }
+    .dash-title  { font-size:15px; font-weight:700; color:#043873; margin:0; }
+    .dash-sub    { font-size:12px; color:#9ca3af; margin-top:2px; }
+    .dash-refresh-btn {
+      background:#fff; border:1px solid #dce8fd; border-radius:8px;
+      padding:6px 14px; font-size:12px; font-weight:600; color:#2563eb;
+      cursor:pointer; transition:background .15s;
+    }
+    .dash-refresh-btn:hover { background:#e8f0fe; }
+    /* KPI row */
+    .dash-kpi-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; margin-bottom:20px; }
+    .kpi-card {
+      border-radius:14px; padding:18px 20px; color:#fff;
+      position:relative; overflow:hidden;
+      box-shadow:0 4px 16px rgba(0,0,0,.12);
+      transition:transform .15s,box-shadow .15s;
+    }
+    .kpi-card:hover { transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,.16); }
+    .kpi-card::after { content:''; position:absolute; right:-18px; top:-18px; width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,.12); }
+    .kpi-card--blue   { background:linear-gradient(135deg,#1d4ed8,#3b82f6); }
+    .kpi-card--orange { background:linear-gradient(135deg,#b45309,#f59e0b); }
+    .kpi-card--green  { background:linear-gradient(135deg,#15803d,#22c55e); }
+    .kpi-card--purple { background:linear-gradient(135deg,#6d28d9,#a78bfa); }
+    .kpi-icon  { font-size:22px; margin-bottom:8px; }
+    .kpi-val   { font-size:30px; font-weight:800; line-height:1; letter-spacing:-.5px; }
+    .kpi-label { font-size:11px; font-weight:600; opacity:.82; margin-top:5px; letter-spacing:.3px; }
+    .kpi-trend { font-size:11px; margin-top:6px; opacity:.75; }
+    /* charts row */
+    .dash-charts-row { display:grid; grid-template-columns:1fr 200px; gap:16px; margin-bottom:16px; align-items:stretch; }
+    @media(max-width:680px){ .dash-charts-row { grid-template-columns:1fr; } }
+    .dash-chart-card {
+      background:#fff; border-radius:14px; padding:16px 18px;
+      box-shadow:0 2px 10px rgba(4,56,115,.07);
+    }
+    .dash-chart-card-title { font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.6px; margin-bottom:12px; }
+    /* donut */
+    .dash-donut-wrap { display:flex; flex-direction:column; align-items:center; }
+    .dash-donut-wrap canvas { width:140px !important; height:140px !important; }
+    .dash-chart-legend { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; justify-content:center; }
+    .dash-legend-item  { display:flex; align-items:center; gap:4px; font-size:10px; color:#555; font-weight:600; }
+    .dash-legend-dot   { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    /* bar chart */
+    .dash-bar-row { margin-bottom:16px; }
+    /* alerts */
+    .dash-alerts { display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+    .dash-alert {
+      display:flex; align-items:flex-start; gap:10px;
+      background:#fff; border-radius:10px; padding:10px 14px;
+      box-shadow:0 1px 6px rgba(4,56,115,.06);
+      border-left:4px solid #e5e7eb; font-size:13px;
+    }
+    .dash-alert.alert-warn   { border-left-color:#f59e0b; }
+    .dash-alert.alert-info   { border-left-color:#3b82f6; }
+    .dash-alert.alert-ok     { border-left-color:#22c55e; }
+    .dash-alert.alert-danger { border-left-color:#ef4444; }
+    .dash-alert-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+    .dash-alert-text { flex:1; color:#374151; line-height:1.45; }
+    .dash-alert-text strong { color:#1e2d4a; }
+    .dash-alerts-title { font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; }
   </style>
 </head>
 <body>
@@ -35,10 +185,11 @@
         <div class="logo-mark" aria-hidden></div>
         <div class="logo-text">NOTELET</div>
       </a>
-      <nav class="nav">
-        <a href="/">หน้าแรก</a>
+      <nav class="nav" id="mainNav">
         <a href="/features/devices/devices.html">ค้นหาอุปกรณ์</a>
-        <a href="/features/devices/rentout.html" class="active">จัดการอุปกรณ์</a>
+        <a href="/features/devices/rentout.html">จัดการอุปกรณ์เช่า</a>
+        <a href="/features/management/giveout.html">ยืมอุปกรณ์</a>
+        <a href="/features/management/borrowhistory.html">ประวัติการยืม</a>
       </nav>
       <div class="header-actions" id="headerActions">
         <a href="/features/auth/login.html" class="btn-login">Login</a>
@@ -48,138 +199,362 @@
 
   <main class="rentout-page">
     <div class="container">
-      <section class="rentout-head centered">
-        <h1>Department’s Device</h1>
-        <div class="add-device-wrap">
-          <button id="openAddGive" class="btn btn-cta" type="button">Add Device</button>
+
+      <!-- Page hero + role bar -->
+      <section class="give-hero">
+        <h1 id="pageTitle">อุปกรณ์ยืมของภาควิชา</h1>
+        <p class="sub" id="pageSubtitle">เลือกอุปกรณ์และส่งคำขอยืมตามเทอมการศึกษา</p>
+        <div class="role-bar">
+          <span id="roleBadge" class="role-badge borrower">โหมดผู้ยืม</span>
+          <button id="btnRoleToggle" class="btn-role-toggle" style="display:none" type="button">
+            ⚙ สลับเป็นโหมดผู้ให้ยืม
+          </button>
         </div>
       </section>
 
-      <section class="rentout-list">
-        <div class="rentout-cards three-up" id="giveoutCards">
-          <article class="rentout-card borrow-card" data-id="1" data-status="requested" data-lessee="ComSci, KMITL">
-            <div class="card-media-large" aria-hidden style="background:#C4DEFD;"></div>
-            <div class="card-content">
-              <h3 class="device-name">MacBook Pro 13"</h3>
-              <div class="meta small">Borrowing Duration · 3 days</div>
-              <div class="meta small status-row">Status · <span class="badge badge-active">Requested</span> <button class="btn btn-confirm" data-id="1">Confirm</button></div>
-              <div class="meta small">Pick up · 2026-01-10</div>
-              <div class="meta small">Return · 2026-01-13</div>
-
-              <div class="card-divider"></div>
-
-              <div class="card-footer">
-                <div class="avatar" aria-hidden></div>
-                <div class="lessee">
-                  <div class="lessee-name">ComSci, KMITL</div>
-                </div>
+      <!-- BORROWER VIEW -->
+      <div id="borrowerView">
+        <section class="spec-panel">
+          <h2>🔍 กำหนดสเปคที่ต้องการ</h2>
+          <form id="specFilterForm" autocomplete="off">
+            <div class="spec-grid">
+              <div class="form-row">
+                <label for="filterType">ประเภทอุปกรณ์</label>
+                <select id="filterType">
+                  <option value="">ทั้งหมด</option>
+                  <option>Laptop</option>
+                  <option>Tablet</option>
+                  <option>Others</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label for="filterCpu">CPU</label>
+                <input id="filterCpu" type="text" placeholder="เช่น Intel Core i7">
+              </div>
+              <div class="form-row">
+                <label for="filterRam">RAM</label>
+                <input id="filterRam" type="text" placeholder="เช่น 16 GB">
+              </div>
+              <div class="form-row">
+                <label for="filterStorage">Storage</label>
+                <input id="filterStorage" type="text" placeholder="เช่น 512 GB SSD">
+              </div>
+              <div class="form-row">
+                <label for="filterGpu">GPU</label>
+                <input id="filterGpu" type="text" placeholder="เช่น NVIDIA RTX 3060">
+              </div>
+              <div class="form-row">
+                <label for="filterKeyword">ค้นหาชื่อ</label>
+                <input id="filterKeyword" type="text" placeholder="ชื่ออุปกรณ์...">
               </div>
             </div>
-          </article>
+            <div class="spec-actions">
+              <button type="button" id="btnSpecReset" class="btn-spec-reset">รีเซต</button>
+              <button type="submit" class="btn-spec-search">🔍 ค้นหา</button>
+            </div>
+          </form>
+        </section>
 
-          <article class="rentout-card borrow-card" data-id="2" data-status="returned" data-lessee="ComSci, KMITL">
-            <div class="card-media-large" aria-hidden style="background:#C4DEFD;"></div>
-            <div class="card-content">
-              <h3 class="device-name">Nikon D3500</h3>
-              <div class="meta small">Borrowing Duration · 7 days</div>
-              <div class="meta small">Status · <span class="badge badge-returned">Returned</span></div>
-              <div class="meta small">Pick up · 2025-12-20</div>
-              <div class="meta small">Return · 2025-12-27</div>
+        <section class="rentout-list">
+          <div class="rentout-cards three-up" id="borrowCards">
+            <div style="text-align:center;color:#aaa;padding:60px">กำลังโหลด...</div>
+          </div>
+        </section>
+      </div>
 
-              <div class="card-divider"></div>
+      <!-- LENDER VIEW -->
+      <div id="lenderView" style="display:none">
+        <!-- Dashboard (Lender only) -->
+        <div class="dash-panel" id="giveDashPanel">
+          <!-- Header -->
+          <div class="dash-header">
+            <div>
+              <div class="dash-title"> Dashboard ภาพรวมการยืม</div>
+              <div class="dash-sub" id="giveDashLastUpdated">อัปเดตอัตโนมัติเมื่อเข้าหน้า</div>
+            </div>
+            <button class="dash-refresh-btn" id="giveDashRefreshBtn" type="button">🔄 รีเฟรช</button>
+          </div>
 
-              <div class="card-footer">
-                <div class="avatar" aria-hidden></div>
-                <div class="lessee">
-                  <div class="lessee-name">ComSci, KMITL</div>
-                </div>
+          <!-- KPI Cards -->
+          <div class="dash-kpi-row">
+            <div class="kpi-card kpi-card--blue">
+              <div class="kpi-icon"></div>
+              <div class="kpi-val" id="giveKpiTotal">—</div>
+              <div class="kpi-label">อุปกรณ์ทั้งหมด</div>
+              <div class="kpi-trend" id="giveKpiTotalSub">อุปกรณ์ในระบบ</div>
+            </div>
+            <div class="kpi-card kpi-card--orange">
+              <div class="kpi-icon"></div>
+              <div class="kpi-val" id="giveKpiActive">—</div>
+              <div class="kpi-label">กำลังถูกยืม</div>
+              <div class="kpi-trend" id="giveKpiActiveSub">Booking + Active</div>
+            </div>
+            <div class="kpi-card kpi-card--green">
+              <div class="kpi-icon"></div>
+              <div class="kpi-val" id="giveKpiFree">—</div>
+              <div class="kpi-label">ว่าง</div>
+              <div class="kpi-trend" id="giveKpiFreeSub">พร้อมให้ยืมใหม่</div>
+            </div>
+            <div class="kpi-card kpi-card--purple">
+              <div class="kpi-icon"></div>
+              <div class="kpi-val" id="giveKpiBorrowers">—</div>
+              <div class="kpi-label">ผู้ยืมทั้งหมด</div>
+              <div class="kpi-trend" id="giveKpiBorrowersSub">ยืมเสร็จสิ้น</div>
+            </div>
+          </div>
+
+          <!-- Line Chart + Status Donut -->
+          <div class="dash-charts-row">
+            <div class="dash-chart-card">
+              <div class="dash-chart-card-title">📈 จำนวนคำขอยืมรายเดือน (6 เดือนล่าสุด)</div>
+              <div style="position:relative;height:180px"><canvas id="giveLineChart"></canvas></div>
+            </div>
+            <div class="dash-chart-card">
+              <div class="dash-chart-card-title">🎯 สถานะคำขอ</div>
+              <div class="dash-donut-wrap">
+                <canvas id="giveStatusChart" width="140" height="140"></canvas>
+                <div class="dash-chart-legend" id="giveChartLegend"></div>
               </div>
             </div>
-          </article>
+          </div>
 
-          <article class="rentout-card borrow-card" data-id="3" data-status="returned" data-lessee="ComSci, KMITL">
-            <div class="card-media-large" aria-hidden style="background:#C4DEFD;"></div>
-            <div class="card-content">
-              <h3 class="device-name">Dell XPS 13</h3>
-              <div class="meta small">Borrowing Duration · 5 days</div>
-              <div class="meta small">Status · <span class="badge badge-returned">Returned</span></div>
-              <div class="meta small">Pick up · 2026-02-01</div>
-              <div class="meta small">Return · 2026-02-06</div>
+          <!-- Bar Chart -->
+          <div class="dash-chart-card dash-bar-row">
+            <div class="dash-chart-card-title">📊 จำนวนคำขอยืมต่ออุปกรณ์ (Top 8)</div>
+            <div style="position:relative;height:160px"><canvas id="giveBarChart"></canvas></div>
+          </div>
 
-              <div class="card-divider"></div>
-
-              <div class="card-footer">
-                <div class="avatar" aria-hidden></div>
-                <div class="lessee">
-                  <div class="lessee-name">ComSci, KMITL</div>
-                </div>
-              </div>
+          <!-- Alerts -->
+          <div>
+            <div class="dash-alerts-title">⚠️ การแจ้งเตือน</div>
+            <div class="dash-alerts" id="giveAlerts">
+              <div style="color:#bbb;font-size:13px;padding:8px">กำลังตรวจสอบ...</div>
             </div>
-          </article>
+          </div>
         </div>
-      </section>
+        <div class="lender-bar">
+          <h2>อุปกรณ์ยืมของฉัน</h2>
+          <button id="openAddGive" class="btn-add-device" type="button">+ เพิ่มอุปกรณ์ยืม</button>
+        </div>
+        <section class="rentout-list">
+          <div class="rentout-cards three-up" id="giveoutCards">
+            <div style="text-align:center;color:#aaa;padding:60px">กำลังโหลด...</div>
+          </div>
+        </section>
+      </div>
+
     </div>
   </main>
 
-  <!-- Confirm Modal for requested items -->
-  <div id="confirmOverlay" class="modal-overlay" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-      <button class="modal-close" id="closeConfirm" aria-label="Close">&times;</button>
-      <h3 id="confirmTitle">Confirm Request</h3>
-      <p id="confirmMessage">Confirm request for <strong id="confirmDevice"></strong> to <strong id="confirmLessee"></strong>?</p>
-      <div class="modal-actions">
-        <button id="confirmAccept" class="btn btn-cta" type="button">Confirm</button>
-        <button id="confirmCancel" class="btn btn-outline" type="button">Cancel</button>
-      </div>
+  <!-- BORROW MODAL -->
+  <div id="borrowModalOverlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="borrowModalTitle">
+      <button class="modal-close" id="closeBorrowModal" aria-label="Close">&times;</button>
+      <h2 id="borrowModalTitle" class="modal-title">ขอยืมอุปกรณ์</h2>
+      <form id="borrowForm" class="modal-form" autocomplete="off">
+        <input type="hidden" id="borrowDeviceId">
+        <div class="form-row">
+          <label>อุปกรณ์</label>
+          <div style="font-weight:600;font-size:15px;padding:6px 0" id="borrowDeviceName">—</div>
+        </div>
+        <div class="form-row">
+          <label for="borrowTerm">เทอมการศึกษา <span style="color:#e55">*</span></label>
+          <select id="borrowTerm" required></select>
+        </div>
+        <div id="termPreview" class="term-preview" style="display:none">
+          ช่วงเวลา: <strong id="termDateText"></strong>
+        </div>
+        <div class="spec-section-title">สเปคที่ต้องการ (ไม่บังคับ)</div>
+        <div class="spec-inline-grid">
+          <div class="form-row"><label for="borrowCpu">CPU</label><input id="borrowCpu" type="text" placeholder="เช่น Intel i7"></div>
+          <div class="form-row"><label for="borrowRam">RAM</label><input id="borrowRam" type="text" placeholder="เช่น 16 GB"></div>
+          <div class="form-row"><label for="borrowStorage">Storage</label><input id="borrowStorage" type="text" placeholder="เช่น 512 GB SSD"></div>
+          <div class="form-row"><label for="borrowGpu">GPU</label><input id="borrowGpu" type="text" placeholder="เช่น RTX 3060"></div>
+        </div>
+        <div class="form-row" style="margin-top:10px">
+          <label for="borrowNote">หมายเหตุเพิ่มเติม</label>
+          <textarea id="borrowNote" rows="2" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-cta">ส่งคำขอยืม</button>
+          <button type="button" id="cancelBorrowModal" class="btn btn-outline">ยกเลิก</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Add Device Modal (same UI as rentout page) -->
-  <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <button class="modal-close" id="closeModal" aria-label="Close">&times;</button>
-      <h2 id="modalTitle" class="modal-title">Add Device</h2>
-      <form id="addRentForm" class="modal-form" autocomplete="off">
+  <!-- ADD DEVICE MODAL -->
+  <div id="addModalOverlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+      <button class="modal-close" id="closeAddModal" aria-label="Close">&times;</button>
+      <h2 id="addModalTitle" class="modal-title">เพิ่มอุปกรณ์ยืม</h2>
+      <form id="addDeviceForm" class="modal-form" autocomplete="off">
         <div class="form-row">
-          <label for="deviceName">Device Name</label>
-          <input id="deviceName" name="deviceName" type="text" required placeholder="e.g. MacBook Pro 13&quot;">
+          <label for="addName">ชื่ออุปกรณ์ <span style="color:#e55">*</span></label>
+          <input id="addName" type="text" required placeholder="เช่น MacBook Pro 13">
         </div>
-
         <div class="form-row">
-          <label for="deviceType">Device Type</label>
-          <select id="deviceType" name="deviceType" required>
-            <option value="">Select type</option>
-            <option>Laptop</option>
-            <option>Tablet</option>
-            <option>Others</option>
+          <label for="addType">ประเภท <span style="color:#e55">*</span></label>
+          <select id="addType" required>
+            <option value="">เลือกประเภท</option>
+            <option value="Notebook">Notebook</option>
+            <option value="MacBook">MacBook</option>
+            <option value="Tablet">Tablet</option>
+            <option value="Other">Other</option>
           </select>
         </div>
-
-        <div class="form-row">
-          <label for="description">Description</label>
-          <textarea id="description" name="description" rows="4" placeholder="Optional notes"></textarea>
+        <div class="spec-section-title">สเปค</div>
+        <div class="form-row form-row--split" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label for="addCpu">CPU</label>
+            <input id="addCpu" type="text" list="addCpuList" placeholder="เช่น i7-12700H">
+            <datalist id="addCpuList">
+              <option value="M1"><option value="M2"><option value="M3">
+              <option value="i5-12500H"><option value="i7-12700H"><option value="i9-13900H">
+              <option value="Ryzen 5 7535HS"><option value="Ryzen 7 7745HX">
+            </datalist>
+          </div>
+          <div>
+            <label for="addRam">RAM</label>
+            <select id="addRam">
+              <option value="">— เลือก RAM —</option>
+              <option value="8GB">8GB</option>
+              <option value="16GB">16GB</option>
+              <option value="32GB">32GB</option>
+              <option value="64GB">64GB</option>
+            </select>
+          </div>
         </div>
-
-        <div class="form-row">
-          <label for="imageUpload">Upload Image</label>
-          <input id="imageUpload" name="image" type="file" accept="image/*">
+        <div class="form-row form-row--split" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <div>
+            <label>Storage</label>
+            <div style="display:flex;gap:6px">
+              <select id="addStorageSize" style="flex:1">
+                <option value="">ขนาด</option>
+                <option value="256GB">256GB</option>
+                <option value="512GB">512GB</option>
+                <option value="1TB">1TB</option>
+                <option value="2TB">2TB</option>
+              </select>
+              <select id="addStorageType" style="flex:1">
+                <option value="">ประเภท</option>
+                <option value="SSD">SSD</option>
+                <option value="HDD">HDD</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label for="addGpu">GPU <span style="color:#9ca3af;font-weight:400;font-size:11px">(ไม่บังคับ)</span></label>
+            <input id="addGpu" type="text" placeholder="เช่น NVIDIA RTX 4060">
+          </div>
         </div>
-
+        <div class="form-row">
+          <label for="addDescription">รายละเอียดเพิ่มเติม</label>
+          <textarea id="addDescription" rows="2" placeholder="รายละเอียดอุปกรณ์ (ไม่บังคับ)"></textarea>
+        </div>
+        <div class="form-row">
+          <label for="addImage">รูปภาพ (Max 5)</label>
+          <input id="addImage" type="file" accept="image/*" multiple>
+          <small style="color:#888;margin-top:4px;display:block">Hold Ctrl/Cmd เพื่อเลือกหลายรูป</small>
+        </div>
+        <div id="addImagePreview" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:8px"></div>
         <div class="modal-actions">
-          <button type="submit" class="btn btn-cta">Confirm</button>
-          <button type="button" id="cancelModal" class="btn btn-outline">Cancel</button>
+          <button type="submit" class="btn btn-cta">เพิ่มอุปกรณ์</button>
+          <button type="button" id="cancelAddModal" class="btn btn-outline">ยกเลิก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT DEVICE MODAL -->
+  <div id="editModalOverlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+      <button class="modal-close" id="closeEditModal" aria-label="Close">&times;</button>
+      <h2 id="editModalTitle" class="modal-title">แก้ไขอุปกรณ์</h2>
+      <form id="editDeviceForm" class="modal-form" autocomplete="off">
+        <input type="hidden" id="editDeviceId">
+        <div class="form-row">
+          <label for="editName">ชื่ออุปกรณ์ <span style="color:#e55">*</span></label>
+          <input id="editName" type="text" required>
+        </div>
+        <div class="form-row">
+          <label for="editType">ประเภท <span style="color:#e55">*</span></label>
+          <select id="editType" required>
+            <option value="">เลือกประเภท</option>
+            <option value="Notebook">Notebook</option>
+            <option value="MacBook">MacBook</option>
+            <option value="Tablet">Tablet</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="spec-section-title">สเปค</div>
+        <div class="spec-inline-grid">
+          <div class="form-row"><label for="editCpu">CPU</label><input id="editCpu" type="text"></div>
+          <div class="form-row"><label for="editRam">RAM</label><input id="editRam" type="text"></div>
+          <div class="form-row"><label for="editStorage">Storage</label><input id="editStorage" type="text"></div>
+          <div class="form-row"><label for="editGpu">GPU</label><input id="editGpu" type="text"></div>
+        </div>
+        <div class="form-row">
+          <label for="editDescription">รายละเอียด</label>
+          <textarea id="editDescription" rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-cta">บันทึก</button>
+          <button type="button" id="cancelEditModal" class="btn btn-outline">ยกเลิก</button>
         </div>
       </form>
     </div>
   </div>
 
   <script>
-    // Require authentication
-    if (typeof NoteLetAuth !== 'undefined') {
-      NoteLetAuth.requireAuth();
-    }
+    if (typeof NoteLetAuth !== 'undefined') NoteLetAuth.requireAuth();
+  </script>
+  <script>
+    // Inject staff-borrow nav link for central staff users
+    (function () {
+      try {
+        const t = localStorage.getItem('access_token');
+        if (!t) return;
+        const seg = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        const p = JSON.parse(atob(seg + '=='.slice(0, (4 - seg.length % 4) % 4)));
+        if (p && p.is_central_staff) {
+          const nav = document.getElementById('mainNav');
+          if (nav && !nav.querySelector('a[href*="staff-borrow"]')) {
+            const a = document.createElement('a');
+            a.href = '/features/management/staff-borrow.html';
+            a.textContent = 'จัดการคำขอยืม';
+            a.style.fontWeight = '700';
+            a.style.color = '#7c3aed';
+            nav.appendChild(a);
+          }
+        }
+      } catch (e) {}
+    })();
   </script>
   <script src="/js/navpopups.js"></script>
+  <script src="/js/image-upload.js"></script>
+  <script>
+    // Wire up image preview for add-device form
+    (function(){
+      var inp = document.getElementById('addImage');
+      var prev = document.getElementById('addImagePreview');
+      if (!inp || !prev) return;
+      inp.addEventListener('change', function() {
+        prev.innerHTML = '';
+        var files = Array.from(this.files).slice(0, 5);
+        files.forEach(function(f) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:90px;height:75px;object-fit:cover;border-radius:6px;border:1px solid #dde4f0';
+            prev.appendChild(img);
+          };
+          reader.readAsDataURL(f);
+        });
+      });
+    })();
+  </script>
   <script>
     (function(){
       const navSearchBtn = document.getElementById('navSearchBtn');
@@ -187,145 +562,565 @@
       const headerSearchInput = document.getElementById('headerSearchInput');
       const headerSearchSubmit = document.getElementById('headerSearchSubmit');
       if(!navSearchBtn || !headerSearch) return;
-
       function showSearch(){ navSearchBtn.style.display='none'; headerSearch.classList.remove('hidden'); headerSearchInput && headerSearchInput.focus(); }
       function hideSearch(){ headerSearch.classList.add('hidden'); navSearchBtn.style.display=''; }
-
-      navSearchBtn.addEventListener('click',(e)=>{ e.preventDefault(); showSearch(); });
-      headerSearchSubmit && headerSearchSubmit.addEventListener('click', ()=>{
-        const q = headerSearchInput.value.trim(); if(!q) return; window.location.href = '/renttypedevice?type=search&q='+encodeURIComponent(q);
-      });
-      headerSearchInput && headerSearchInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); headerSearchSubmit.click(); } else if(e.key==='Escape'){ hideSearch(); } });
-      document.addEventListener('click',(e)=>{ if(!headerSearch.contains(e.target) && e.target !== navSearchBtn) hideSearch(); });
+      navSearchBtn.addEventListener('click', e => { e.preventDefault(); showSearch(); });
+      headerSearchSubmit && headerSearchSubmit.addEventListener('click', () => { const q = headerSearchInput.value.trim(); if(!q) return; window.location.href = '/renttypedevice?type=search&q=' + encodeURIComponent(q); });
+      headerSearchInput && headerSearchInput.addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); headerSearchSubmit.click(); } else if(e.key==='Escape') hideSearch(); });
+      document.addEventListener('click', e => { if(!headerSearch.contains(e.target) && e.target !== navSearchBtn) hideSearch(); });
     })();
   </script>
-
   <script>
-    // ---- Add Device modal logic (same behavior as rentout page) ----
-    (function(){
-      const openBtn = document.getElementById('openAddGive');
-      const overlay = document.getElementById('modalOverlay');
-      const closeBtn = document.getElementById('closeModal');
-      const cancelBtn = document.getElementById('cancelModal');
-      const form = document.getElementById('addRentForm');
+  (function () {
+    // ── Utilities ──────────────────────────────────────────────────────
+    function esc(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function getToken() { return localStorage.getItem('access_token'); }
+    function getPayload() {
+      try { const t = getToken(); if(!t) return null; return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); } catch { return null; }
+    }
+    function firstImg(imageUrl) {
+      if (!imageUrl) return '';
+      try { const a = JSON.parse(imageUrl); return Array.isArray(a) ? a[0] : imageUrl; } catch { return imageUrl; }
+    }
+    function openModal(id)  { const el=document.getElementById(id); if(!el)return; el.setAttribute('aria-hidden','false'); el.classList.add('open'); document.body.style.overflow='hidden'; }
+    function closeModal(id) { const el=document.getElementById(id); if(!el)return; el.setAttribute('aria-hidden','true');  el.classList.remove('open'); document.body.style.overflow=''; }
+
+    // ── Academic terms ──────────────────────────────────────────────
+    function buildTerms() {
+      const now = new Date();
+      const terms = [];
+      function add(label, s, e) { terms.push({ label, start: s.toISOString().split('T')[0], end: e.toISOString().split('T')[0] }); }
+      for (let y = now.getFullYear() - 1; y <= now.getFullYear() + 1; y++) {
+        const be = y + 543;
+        add('เทอม 1/' + be,       new Date(y,   5,  1), new Date(y,   9, 31));
+        add('เทอม 2/' + be,       new Date(y,  10,  1), new Date(y+1, 2, 31));
+        add('เทอมฤดูร้อน/' + be,  new Date(y+1, 3,  1), new Date(y+1, 4, 31));
+      }
+      const past = new Date(now - 30*864e5);
+      return terms.filter(t => new Date(t.end) >= past).slice(0, 6);
+    }
+    function populateTermSelect() {
+      const sel = document.getElementById('borrowTerm');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">— เลือกเทอม —</option>';
+      const now = new Date();
+      buildTerms().forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = JSON.stringify({ start: t.start, end: t.end });
+        const fmt = d => new Date(d).toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'numeric' });
+        opt.textContent = t.label + '  (' + fmt(t.start) + ' – ' + fmt(t.end) + ')';
+        if (new Date(t.start) <= now && now <= new Date(t.end)) opt.textContent += ' ← ปัจจุบัน';
+        sel.appendChild(opt);
+      });
+    }
+
+    // ── Role ────────────────────────────────────────────────────────
+    const AUTHORIZED_EMAIL = 'test675@kmitl.ac.th';
+    let currentRole = 'lender';
+
+    function canSwitchRole() {
+      const p = getPayload();
+      if (!p) return false;
+      return p.email === AUTHORIZED_EMAIL || p.is_admin === true || p.is_authorized_lender === true;
+    }
+
+    function applyRole(role) {
+      currentRole = role;
+      const badge      = document.getElementById('roleBadge');
+      const toggleBtn  = document.getElementById('btnRoleToggle');
+      const borrowView = document.getElementById('borrowerView');
+      const lendView   = document.getElementById('lenderView');
+      const subtitle   = document.getElementById('pageSubtitle');
+      if (role === 'lender') {
+        if (badge)     { badge.textContent = 'โหมดผู้ให้ยืม'; badge.className = 'role-badge lender'; }
+        if (toggleBtn)   toggleBtn.textContent = '👤 สลับเป็นโหมดผู้ยืม';
+        if (borrowView)  borrowView.style.display = 'none';
+        if (lendView)    lendView.style.display   = '';
+        if (subtitle)    subtitle.textContent = 'จัดการอุปกรณ์ยืมของภาควิชา';
+        loadLenderDevices();
+        loadGiveDashboard();
+      } else {
+        if (badge)     { badge.textContent = 'โหมดผู้ยืม'; badge.className = 'role-badge borrower'; }
+        if (toggleBtn)   toggleBtn.textContent = '⚙ สลับเป็นโหมดผู้ให้ยืม';
+        if (borrowView)  borrowView.style.display = '';
+        if (lendView)    lendView.style.display   = 'none';
+        if (subtitle)    subtitle.textContent = 'เลือกอุปกรณ์และส่งคำขอยืมตามเทอมการศึกษา';
+        loadBorrowDevices();
+      }
+    }
+
+    // ── DOMContentLoaded ────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+      populateTermSelect();
+
+      const toggleBtn = document.getElementById('btnRoleToggle');
+      if (canSwitchRole()) {
+        if (toggleBtn) toggleBtn.style.display = '';
+        toggleBtn && toggleBtn.addEventListener('click', () => applyRole(currentRole === 'lender' ? 'borrower' : 'lender'));
+        applyRole('lender');
+      } else {
+        applyRole('borrower');
+      }
+
+      // term preview
+      const termSel = document.getElementById('borrowTerm');
+      termSel && termSel.addEventListener('change', function () {
+        const preview  = document.getElementById('termPreview');
+        const dateText = document.getElementById('termDateText');
+        if (!this.value) { if(preview) preview.style.display='none'; return; }
+        const t = JSON.parse(this.value);
+        const fmt = s => new Date(s).toLocaleDateString('th-TH', { day:'numeric', month:'long', year:'numeric' });
+        if (dateText) dateText.textContent = fmt(t.start) + ' — ' + fmt(t.end);
+        if (preview)  preview.style.display = '';
+      });
+
+      // spec filter
+      const filterForm = document.getElementById('specFilterForm');
+      filterForm && filterForm.addEventListener('submit', e => { e.preventDefault(); loadBorrowDevices(); });
+      const resetBtn = document.getElementById('btnSpecReset');
+      resetBtn && resetBtn.addEventListener('click', () => { filterForm && filterForm.reset(); loadBorrowDevices(); });
+    });
+
+    // ── Load — Borrower ─────────────────────────────────────────────
+    async function loadBorrowDevices() {
+      const grid = document.getElementById('borrowCards');
+      if (!grid) return;
+      grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:60px">กำลังโหลด...</div>';
+      const type    = (document.getElementById('filterType')?.value    || '').toLowerCase();
+      const cpu     = (document.getElementById('filterCpu')?.value     || '').toLowerCase();
+      const ram     = (document.getElementById('filterRam')?.value     || '').toLowerCase();
+      const storage = (document.getElementById('filterStorage')?.value || '').toLowerCase();
+      const gpu     = (document.getElementById('filterGpu')?.value     || '').toLowerCase();
+      const kw      = (document.getElementById('filterKeyword')?.value || '').toLowerCase();
+      try {
+        const resp   = await fetch('/api/devices/browse');
+        const result = await resp.json();
+        let devices  = (Array.isArray(result.data) ? result.data : []).filter(d => d.isAdminDevice || d.is_admin_device);
+        if (type)    devices = devices.filter(d => (d.type||'').toLowerCase().includes(type));
+        if (kw)      devices = devices.filter(d => (d.name||'').toLowerCase().includes(kw));
+        if (cpu)     devices = devices.filter(d => (d.cpu||d.description||'').toLowerCase().includes(cpu));
+        if (ram)     devices = devices.filter(d => (d.ram||d.description||'').toLowerCase().includes(ram));
+        if (storage) devices = devices.filter(d => (d.storage||d.description||'').toLowerCase().includes(storage));
+        if (gpu)     devices = devices.filter(d => (d.gpu||d.description||'').toLowerCase().includes(gpu));
+        grid.innerHTML = '';
+        if (!devices.length) { grid.innerHTML = '<div class="req-empty"><div class="icon">📦</div><p>ไม่พบอุปกรณ์ที่ตรงกับเงื่อนไข</p></div>'; return; }
+        devices.forEach(d => {
+          const img  = firstImg(d.imageUrl);
+          const specParts = [d.cpu && 'CPU: '+d.cpu, d.ram && 'RAM: '+d.ram, d.storage && 'Storage: '+d.storage, d.gpu && 'GPU: '+d.gpu].filter(Boolean);
+          const statusLabel = d.status==='Available'||d.status==='1' ? 'พร้อมยืม' : (d.status||'พร้อมยืม');
+          const card = document.createElement('article');
+          card.className = 'rentout-card borrow-card';
+          card.dataset.id = d.deviceNo; card.dataset.name = d.name;
+          card.innerHTML =
+            '<div class="card-media-large" aria-hidden style="' + (img ? 'background-image:url(\''+esc(img)+'\');background-size:cover;background-position:center' : 'background:#C4DEFD') + '"></div>' +
+            '<div class="card-content">' +
+              '<h3 class="device-name">' + esc(d.name) + '</h3>' +
+              '<div class="meta small">ประเภท · ' + esc(d.type||'อุปกรณ์') + '</div>' +
+              specParts.map(s => '<div class="meta small">' + esc(s) + '</div>').join('') +
+              (!specParts.length && d.description ? '<div class="meta small">' + esc(d.description) + '</div>' : '') +
+              '<div class="meta small">สถานะ · <span class="badge">' + esc(statusLabel) + '</span></div>' +
+              '<div class="card-actions"><button class="btn-card-borrow"' +
+                ' data-id="' + d.deviceNo + '"' +
+                ' data-name="' + esc(d.name) + '"' +
+                ' data-cpu="' + esc(d.cpu||'') + '"' +
+                ' data-ram="' + esc(d.ram||'') + '"' +
+                ' data-storage="' + esc(d.storage||'') + '"' +
+                ' data-gpu="' + esc(d.gpu||'') + '">📋 ขอยืม</button></div>' +
+            '</div>';
+          grid.appendChild(card);
+        });
+      } catch(err) { grid.innerHTML = '<div style="text-align:center;color:#e55;padding:40px">เกิดข้อผิดพลาด: ' + esc(err.message) + '</div>'; }
+    }
+
+    // ── Load — Lender ────────────────────────────────────────────────
+    async function loadLenderDevices() {
       const grid = document.getElementById('giveoutCards');
+      if (!grid) return;
+      grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:60px">กำลังโหลด...</div>';
+      const token = getToken();
+      if (!token) { grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px">กรุณาเข้าสู่ระบบ</div>'; return; }
+      try {
+        const resp   = await fetch('/api/devices/my', { headers: { 'Authorization': 'Bearer ' + token } });
+        const result = await resp.json();
+        if (!resp.ok || !result.success) throw new Error(result.message || 'โหลดไม่สำเร็จ');
+        const all    = Array.isArray(result.data) ? result.data : (result.data && Array.isArray(result.data.data) ? result.data.data : []);
+        const devices = all.filter(d => Number(d.price) === 0);
+        grid.innerHTML = '';
+        if (!devices.length) { grid.innerHTML = '<div class="req-empty"><div class="icon">📦</div><p>ยังไม่มีอุปกรณ์ยืม · กดปุ่ม "+ เพิ่มอุปกรณ์ยืม" เพื่อเริ่มต้น</p></div>'; return; }
+        devices.forEach(d => {
+          const img  = firstImg(d.imageUrl);
+          const specParts = [d.cpu && 'CPU: '+d.cpu, d.ram && 'RAM: '+d.ram, d.storage && 'Storage: '+d.storage, d.gpu && 'GPU: '+d.gpu].filter(Boolean);
+          const statusLabel = d.status==='Available'||d.status==='1' ? 'พร้อมยืม' : (d.status||'พร้อมยืม');
+          const card = document.createElement('article');
+          card.className = 'rentout-card borrow-card';
+          card.dataset.id = d.deviceNo; card.dataset.name = d.name;
+          card.innerHTML =
+            '<div class="card-media-large" aria-hidden style="' + (img ? 'background-image:url(\''+esc(img)+'\');background-size:cover;background-position:center' : 'background:#C4DEFD') + '"></div>' +
+            '<div class="card-content">' +
+              '<h3 class="device-name">' + esc(d.name) + '</h3>' +
+              '<div class="meta small">ประเภท · ' + esc(d.type||'อุปกรณ์') + '</div>' +
+              specParts.map(s => '<div class="meta small">' + esc(s) + '</div>').join('') +
+              (d.description ? '<div class="meta small">' + esc(d.description) + '</div>' : '') +
+              '<div class="meta small">สถานะ · <span class="badge">' + esc(statusLabel) + '</span></div>' +
+              '<div class="card-actions">' +
+                '<button class="btn-card-edit"' +
+                  ' data-id="' + d.deviceNo + '"' +
+                  ' data-name="' + esc(d.name) + '"' +
+                  ' data-type="' + esc(d.type||'') + '"' +
+                  ' data-desc="' + esc(d.description||'') + '"' +
+                  ' data-cpu="' + esc(d.cpu||'') + '"' +
+                  ' data-ram="' + esc(d.ram||'') + '"' +
+                  ' data-storage="' + esc(d.storage||'') + '"' +
+                  ' data-gpu="' + esc(d.gpu||'') + '">Edit</button>' +
+                '<button class="btn-card-del" data-id="' + d.deviceNo + '">🗑 Delete</button>' +
+              '</div>' +
+            '</div>';
+          grid.appendChild(card);
+        });
+      } catch(err) { grid.innerHTML = '<div style="text-align:center;color:#e55;padding:40px">เกิดข้อผิดพลาด: ' + esc(err.message) + '</div>'; }
+    }
 
-      function openModal(){
-        overlay && overlay.setAttribute('aria-hidden','false');
-        overlay && overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
-        const nameEl = document.getElementById('deviceName');
-        nameEl && nameEl.focus();
-      }
+    // ── Dashboard (Lender only) ─────────────────────────────────
+    let _giveStatusChart = null;
+    let _giveLineChart   = null;
+    let _giveBarChart    = null;
 
-      function closeModal(){
-        overlay && overlay.setAttribute('aria-hidden','true');
-        overlay && overlay.classList.remove('open');
-        document.body.style.overflow = '';
-      }
+    async function loadGiveDashboard() {
+      const token = getToken();
+      if (!token) return;
+      try {
+        const [devRes, incRes] = await Promise.all([
+          fetch('/api/devices/my', { headers: { 'Authorization': 'Bearer ' + token } }),
+          fetch('/api/rental-requests/incoming', { headers: { 'Authorization': 'Bearer ' + token } }),
+        ]);
+        const devData = await devRes.json();
+        const incData = await incRes.json();
 
-      function escapeHtml(s){
-        return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-      }
+        const allDevices    = Array.isArray(devData.data) ? devData.data : (devData.data && Array.isArray(devData.data.data) ? devData.data.data : []);
+        const borrowDevices = allDevices.filter(d => Number(d.price) === 0);
+        const borrowDeviceIds = new Set(borrowDevices.map(d => String(d.deviceNo)));
+        // กรองเฉพาะคำขอที่เกี่ยวกับอุปกรณ์ยืม (price=0) เท่านั้น
+        const allIncoming = Array.isArray(incData.data) ? incData.data : [];
+        const incoming    = allIncoming.filter(r => borrowDeviceIds.has(String(r.deviceNo)));
 
-      openBtn && openBtn.addEventListener('click', openModal);
-      closeBtn && closeBtn.addEventListener('click', closeModal);
-      cancelBtn && cancelBtn.addEventListener('click', closeModal);
-      overlay && overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
+        const pending   = incoming.filter(r => r.status === 'Request Pending').length;
+        const active    = incoming.filter(r => r.status === 'Booking Confirmed' || r.status === 'Rental Active').length;
+        const completed = incoming.filter(r => r.status === 'Rental Completed').length;
+        const rejected  = incoming.filter(r => r.status === 'rejected' || r.status === 'cancelled').length;
+        const uniqueSet = new Set(incoming.map(r => r.renterUserId || r.renterEmail).filter(Boolean));
+        const freeDevs  = Math.max(0, borrowDevices.length - active);
 
-      form && form.addEventListener('submit', (e)=>{
-        e.preventDefault();
-        if(!grid) return closeModal();
+        // ── KPI Cards ──────────────────────────────────────────
+        const setKpi = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setKpi('giveKpiTotal',     borrowDevices.length);
+        setKpi('giveKpiActive',    active);
+        setKpi('giveKpiFree',      freeDevs);
+        setKpi('giveKpiBorrowers', uniqueSet.size);
+        setKpi('giveKpiTotalSub',    borrowDevices.length + ' เครื่องในระบบ');
+        setKpi('giveKpiActiveSub',   active + '/' + borrowDevices.length + ' เครื่อง');
+        setKpi('giveKpiFreeSub',     freeDevs + ' เครื่อง พร้อมให้ยืม');
+        setKpi('giveKpiBorrowersSub', completed + ' รายการเสร็จสิ้น');
+        const upd = document.getElementById('giveDashLastUpdated');
+        if (upd) upd.textContent = 'อัปเดต: ' + new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
 
-        const deviceName = (form.deviceName && form.deviceName.value || '').trim();
-        if(!deviceName) return;
-
-        const nextId = String(Date.now());
-        const card = document.createElement('article');
-        card.className = 'rentout-card borrow-card';
-        card.setAttribute('data-id', nextId);
-        card.setAttribute('data-status', 'requested');
-        card.setAttribute('data-lessee', 'ComSci, KMITL');
-
-        card.innerHTML = `
-          <div class="card-media-large" aria-hidden style="background:#C4DEFD;"></div>
-          <div class="card-content">
-            <h3 class="device-name">${escapeHtml(deviceName)}</h3>
-            <div class="meta small">Borrowing Duration</div>
-            <div class="meta small status-row">Status · <span class="badge badge-active">Requested</span> <button class="btn btn-confirm" data-id="${escapeHtml(nextId)}">Confirm</button></div>
-            <div class="meta small">Pick up or return time</div>
-            <div class="meta small">Pick up or return Location</div>
-
-            <div class="card-divider"></div>
-
-            <div class="card-footer">
-              <div class="avatar" aria-hidden></div>
-              <div class="lessee">
-                <div class="lessee-name">ComSci, KMITL</div>
-              </div>
-            </div>
-          </div>
-        `;
-
-        grid.insertBefore(card, grid.firstChild);
-        closeModal();
-        form.reset();
-      });
-    })();
-
-    // ---- Confirm modal logic for requested items (Requested -> Borrowed) ----
-    (function(){
-      const confirmOverlay = document.getElementById('confirmOverlay');
-      const closeConfirm = document.getElementById('closeConfirm');
-      const confirmDevice = document.getElementById('confirmDevice');
-      const confirmLessee = document.getElementById('confirmLessee');
-      const confirmAccept = document.getElementById('confirmAccept');
-      const confirmCancel = document.getElementById('confirmCancel');
-      let currentConfirmCard = null;
-
-      function openConfirmModal(card){
-        currentConfirmCard = card;
-        const device = card.querySelector('.device-name')?.textContent || '';
-        const lessee = card.dataset.lessee || card.querySelector('.lessee-name')?.textContent || '';
-        if(confirmDevice) confirmDevice.textContent = device;
-        if(confirmLessee) confirmLessee.textContent = lessee;
-        confirmOverlay && confirmOverlay.classList.add('open');
-        confirmOverlay && confirmOverlay.setAttribute('aria-hidden','false');
-        document.body.style.overflow = 'hidden';
-      }
-
-      function closeConfirmModal(){
-        confirmOverlay && confirmOverlay.classList.remove('open');
-        confirmOverlay && confirmOverlay.setAttribute('aria-hidden','true');
-        document.body.style.overflow = '';
-        currentConfirmCard = null;
-      }
-
-      document.addEventListener('click', (e)=>{
-        const btn = e.target.closest('.btn-confirm');
-        if(!btn) return;
-        const card = btn.closest('.rentout-card');
-        if(!card) return;
-        openConfirmModal(card);
-      });
-
-      closeConfirm && closeConfirm.addEventListener('click', closeConfirmModal);
-      confirmCancel && confirmCancel.addEventListener('click', closeConfirmModal);
-      confirmOverlay && confirmOverlay.addEventListener('click', (e)=>{ if(e.target === confirmOverlay) closeConfirmModal(); });
-
-      confirmAccept && confirmAccept.addEventListener('click', ()=>{
-        if(!currentConfirmCard) return closeConfirmModal();
-        currentConfirmCard.dataset.status = 'borrowed';
-        const badge = currentConfirmCard.querySelector('.badge');
-        if(badge){
-          badge.className = 'badge badge-rented';
-          badge.textContent = 'Borrowed';
+        // ── Donut ───────────────────────────────────────────────
+        const ctxD = document.getElementById('giveStatusChart');
+        const legendEl = document.getElementById('giveChartLegend');
+        if (ctxD && typeof Chart !== 'undefined') {
+          if (_giveStatusChart) _giveStatusChart.destroy();
+          const total = pending + active + completed + rejected;
+          const dLabels = ['รอยืนยัน', 'กำลังถูกยืม', 'คืนแล้ว', 'ปฏิเสธ/ยกเลิก'];
+          const dColors = ['#f59e0b', '#3b82f6', '#22c55e', '#ef4444'];
+          const dData   = total === 0 ? [1,0,0,0] : [pending, active, completed, rejected];
+          _giveStatusChart = new Chart(ctxD, {
+            type: 'doughnut',
+            data: { labels: dLabels, datasets: [{ data: dData, backgroundColor: dColors, borderColor: '#fff', borderWidth: 3, hoverOffset: 8 }] },
+            options: {
+              cutout: '70%', responsive: false,
+              animation: { animateRotate: true, duration: 700 },
+              plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + (total===0 ? 'ยังไม่มี' : c.raw + ' รายการ') } } },
+            },
+          });
+          if (legendEl) legendEl.innerHTML = dLabels.map((l,i) =>
+            '<div class="dash-legend-item"><div class="dash-legend-dot" style="background:' + dColors[i] + '"></div>' + l + '</div>').join('');
         }
-        const cbtn = currentConfirmCard.querySelector('.btn-confirm');
-        if(cbtn) cbtn.remove();
-        closeConfirmModal();
-      });
-    })();
+
+        // ── Line Chart (borrow count per month, 6 months) ──────
+        const ctxL = document.getElementById('giveLineChart');
+        if (ctxL && typeof Chart !== 'undefined') {
+          const now = new Date();
+          const months = [];
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            months.push({ label: d.toLocaleDateString('th-TH', {month:'short', year:'2-digit'}), y: d.getFullYear(), m: d.getMonth(), count: 0 });
+          }
+          incoming.forEach(r => {
+            const d = new Date(r.startDate || r.createdAt || '');
+            const bucket = months.find(b => b.y === d.getFullYear() && b.m === d.getMonth());
+            if (bucket) bucket.count++;
+          });
+          if (_giveLineChart) _giveLineChart.destroy();
+          _giveLineChart = new Chart(ctxL, {
+            type: 'line',
+            data: {
+              labels: months.map(b => b.label),
+              datasets: [{
+                label: 'จำนวนคำขอยืม',
+                data: months.map(b => b.count),
+                borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.1)',
+                borderWidth: 2.5, pointRadius: 5, pointBackgroundColor: '#2563eb',
+                fill: true, tension: 0.4,
+              }],
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              animation: { duration: 700 },
+              scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,.05)' } },
+                x: { grid: { color: 'rgba(0,0,0,.04)' } },
+              },
+              plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+            },
+          });
+        }
+
+        // ── Bar Chart (top 8 devices) ───────────────────────────
+        const ctxB = document.getElementById('giveBarChart');
+        if (ctxB && typeof Chart !== 'undefined') {
+          const deviceMap = {};
+          incoming.forEach(r => {
+            const key = r.deviceName || r.deviceNo || 'ไม่ระบุ';
+            if (!deviceMap[key]) deviceMap[key] = { total: 0, completed: 0, active: 0 };
+            deviceMap[key].total++;
+            if (r.status === 'Rental Completed') deviceMap[key].completed++;
+            if (r.status === 'Booking Confirmed' || r.status === 'Rental Active') deviceMap[key].active++;
+          });
+          const sorted = Object.entries(deviceMap).sort((a,b) => b[1].total - a[1].total).slice(0, 8);
+          if (_giveBarChart) _giveBarChart.destroy();
+          _giveBarChart = new Chart(ctxB, {
+            type: 'bar',
+            data: {
+              labels: sorted.map(([k]) => k.length > 14 ? k.slice(0, 14) + '…' : k),
+              datasets: [
+                { label:'คืนแล้ว',        data: sorted.map(([,v]) => v.completed), backgroundColor:'rgba(34,197,94,.75)',  borderRadius:6 },
+                { label:'กำลังถูกยืม',    data: sorted.map(([,v]) => v.active),    backgroundColor:'rgba(59,130,246,.75)',  borderRadius:6 },
+                { label:'ทั้งหมด',        data: sorted.map(([,v]) => v.total),     backgroundColor:'rgba(148,163,184,.35)', borderRadius:6 },
+              ],
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              animation: { duration: 600 },
+              scales: {
+                x: { stacked: false, grid: { display: false } },
+                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,.05)' } },
+              },
+              plugins: { legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 12 } }, tooltip: { mode: 'index', intersect: false } },
+            },
+          });
+        }
+
+        // ── Alerts ──────────────────────────────────────────────
+        const alertsEl = document.getElementById('giveAlerts');
+        if (alertsEl) {
+          const alerts = [];
+          if (pending > 0)
+            alerts.push({ cls:'alert-warn',   icon:'⏳', msg:'<strong>'+pending+' คำขอ</strong>รอการอนุมัติ — ตรวจสอบและยืนยันด่วน' });
+          const threeDays = 3 * 86400000;
+          const endingSoon = incoming.filter(r => {
+            if (r.status !== 'Rental Active' && r.status !== 'Booking Confirmed') return false;
+            const diff = new Date(r.endDate) - Date.now();
+            return diff >= 0 && diff <= threeDays;
+          });
+          if (endingSoon.length > 0)
+            alerts.push({ cls:'alert-info',   icon:'📌', msg:'<strong>'+endingSoon.length+' รายการ</strong>ครบกำหนดคืนภายใน 3 วัน — เตรียมรับอุปกรณ์' });
+          const overdue = incoming.filter(r =>
+            (r.status === 'Rental Active' || r.status === 'Booking Confirmed') && new Date(r.endDate) < Date.now()
+          );
+          if (overdue.length > 0)
+            alerts.push({ cls:'alert-danger', icon:'🚨', msg:'<strong>'+overdue.length+' รายการ</strong>เกินกำหนดคืน — ติดต่อผู้ยืมด่วน' });
+          if (borrowDevices.length === 0)
+            alerts.push({ cls:'alert-info',   icon:'📦', msg:'ยังไม่มีอุปกรณ์ — <strong>กด "+ เพิ่มอุปกรณ์ยืม"</strong> เพื่อเริ่มต้น' });
+          if (alerts.length === 0)
+            alerts.push({ cls:'alert-ok',     icon:'✅', msg:'ทุกอย่างเป็นปกติ — ไม่มีการแจ้งเตือน' });
+          alertsEl.innerHTML = alerts.map(a =>
+            '<div class="dash-alert ' + a.cls + '"><div class="dash-alert-icon">' + a.icon + '</div><div class="dash-alert-text">' + a.msg + '</div></div>'
+          ).join('');
+        }
+      } catch(e) { /* silent */ }
+    }
+
+    document.getElementById('giveDashRefreshBtn') && document.getElementById('giveDashRefreshBtn').addEventListener('click', loadGiveDashboard);
+
+    // ── Borrow modal ─────────────────────────────────────────────────
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.btn-card-borrow');
+      if (!btn) return;
+      document.getElementById('borrowDeviceId').value = btn.dataset.id;
+      document.getElementById('borrowDeviceName').textContent = btn.dataset.name || '—';
+      document.getElementById('borrowCpu').value     = btn.dataset.cpu     || '';
+      document.getElementById('borrowRam').value     = btn.dataset.ram     || '';
+      document.getElementById('borrowStorage').value = btn.dataset.storage || '';
+      document.getElementById('borrowGpu').value     = btn.dataset.gpu     || '';
+      document.getElementById('borrowNote').value    = '';
+      document.getElementById('borrowTerm').value    = '';
+      const preview = document.getElementById('termPreview');
+      if (preview) preview.style.display = 'none';
+      openModal('borrowModalOverlay');
+      document.getElementById('borrowTerm').focus();
+    });
+    document.getElementById('closeBorrowModal')  && document.getElementById('closeBorrowModal').addEventListener('click',  () => closeModal('borrowModalOverlay'));
+    document.getElementById('cancelBorrowModal') && document.getElementById('cancelBorrowModal').addEventListener('click', () => closeModal('borrowModalOverlay'));
+    document.getElementById('borrowModalOverlay') && document.getElementById('borrowModalOverlay').addEventListener('click', e => { if(e.target.id==='borrowModalOverlay') closeModal('borrowModalOverlay'); });
+
+    document.getElementById('borrowForm') && document.getElementById('borrowForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const token = getToken();
+      if (!token) { alert('กรุณาเข้าสู่ระบบก่อน'); window.location.href='/features/auth/login.html'; return; }
+      const termVal = document.getElementById('borrowTerm').value;
+      if (!termVal) { alert('กรุณาเลือกเทอมการศึกษา'); return; }
+      const { start, end } = JSON.parse(termVal);
+      const deviceId = document.getElementById('borrowDeviceId').value;
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true; submitBtn.textContent = 'กำลังส่ง...';
+      try {
+        const resp = await fetch('/api/rental-requests', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deviceNo: Number(deviceId),
+            startDate: start,
+            endDate: end,
+            totalPrice: 0,
+            note: document.getElementById('borrowNote').value.trim() || '',
+          }),
+        });
+        const result = await resp.json();
+        if (resp.ok && result.success) { closeModal('borrowModalOverlay'); alert('✅ ส่งคำขอยืมสำเร็จ! เจ้าของจะได้รับการแจ้งเตือน'); loadBorrowDevices(); }
+        else throw new Error(result.message || result.error || 'ส่งคำขอไม่สำเร็จ');
+      } catch(err) { alert('เกิดข้อผิดพลาด: ' + err.message); }
+      finally { submitBtn.disabled = false; submitBtn.textContent = 'ส่งคำขอยืม'; }
+    });
+
+    // ── Add Device modal ─────────────────────────────────────────────
+    document.getElementById('openAddGive') && document.getElementById('openAddGive').addEventListener('click', () => { document.getElementById('addDeviceForm').reset(); openModal('addModalOverlay'); document.getElementById('addName').focus(); });
+    document.getElementById('closeAddModal')  && document.getElementById('closeAddModal').addEventListener('click',  () => closeModal('addModalOverlay'));
+    document.getElementById('cancelAddModal') && document.getElementById('cancelAddModal').addEventListener('click', () => closeModal('addModalOverlay'));
+    document.getElementById('addModalOverlay') && document.getElementById('addModalOverlay').addEventListener('click', e => { if(e.target.id==='addModalOverlay') closeModal('addModalOverlay'); });
+
+    document.getElementById('addDeviceForm') && document.getElementById('addDeviceForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const token = getToken(); if(!token) { alert('กรุณาเข้าสู่ระบบก่อน'); return; }
+      const name = document.getElementById('addName').value.trim();
+      const type = document.getElementById('addType').value;
+      if (!name || !type) { alert('กรุณากรอกชื่อและประเภท'); return; }
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true; submitBtn.textContent = 'กำลังบันทึก...';
+      try {
+        let imageUrl = '';
+        const files = document.getElementById('addImage').files;
+        if (files && files.length > 0 && typeof uploadDeviceImages === 'function') {
+          const urls = await uploadDeviceImages(files); imageUrl = urls.length ? JSON.stringify(urls) : '';
+        }
+        const cpu     = document.getElementById('addCpu').value.trim();
+        const ram     = document.getElementById('addRam').value;
+        const stSize  = document.getElementById('addStorageSize').value;
+        const stType  = document.getElementById('addStorageType').value;
+        const storage = [stSize, stType].filter(Boolean).join(' ');
+        const gpu     = document.getElementById('addGpu').value.trim();
+        const desc    = document.getElementById('addDescription').value.trim();
+        const resp = await fetch('/api/devices', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, type, price: 0, description: desc, imageUrl,
+            cpu, ram, storage, gpu, isAdminDevice: true,
+          }),
+        });
+        const result = await resp.json();
+        if (resp.ok && result.success) {
+          closeModal('addModalOverlay');
+          document.getElementById('addDeviceForm').reset();
+          document.getElementById('addImagePreview').innerHTML = '';
+          loadLenderDevices();
+        }
+        else throw new Error(result.message || 'เพิ่มไม่สำเร็จ');
+      } catch(err) { alert('เกิดข้อผิดพลาด: ' + err.message); }
+      finally { submitBtn.disabled = false; submitBtn.textContent = 'เพิ่มอุปกรณ์'; }
+    });
+
+    // ── Edit Device modal ────────────────────────────────────────────
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.btn-card-edit');
+      if (!btn) return;
+      document.getElementById('editDeviceId').value    = btn.dataset.id;
+      document.getElementById('editName').value        = btn.dataset.name    || '';
+      document.getElementById('editType').value        = btn.dataset.type    || '';
+      document.getElementById('editDescription').value = btn.dataset.desc    || '';
+      document.getElementById('editCpu').value         = btn.dataset.cpu     || '';
+      document.getElementById('editRam').value         = btn.dataset.ram     || '';
+      document.getElementById('editStorage').value     = btn.dataset.storage || '';
+      document.getElementById('editGpu').value         = btn.dataset.gpu     || '';
+      openModal('editModalOverlay');
+      document.getElementById('editName').focus();
+    });
+    document.getElementById('closeEditModal')  && document.getElementById('closeEditModal').addEventListener('click',  () => closeModal('editModalOverlay'));
+    document.getElementById('cancelEditModal') && document.getElementById('cancelEditModal').addEventListener('click', () => closeModal('editModalOverlay'));
+    document.getElementById('editModalOverlay') && document.getElementById('editModalOverlay').addEventListener('click', e => { if(e.target.id==='editModalOverlay') closeModal('editModalOverlay'); });
+
+    document.getElementById('editDeviceForm') && document.getElementById('editDeviceForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const token = getToken(); if(!token) { alert('กรุณาเข้าสู่ระบบก่อน'); return; }
+      const id   = document.getElementById('editDeviceId').value;
+      const name = document.getElementById('editName').value.trim();
+      const type = document.getElementById('editType').value;
+      if (!name || !type) { alert('กรุณากรอกชื่อและประเภท'); return; }
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true; submitBtn.textContent = 'กำลังบันทึก...';
+      try {
+        const descParts = [
+          document.getElementById('editCpu').value     && 'CPU: '     + document.getElementById('editCpu').value,
+          document.getElementById('editRam').value     && 'RAM: '     + document.getElementById('editRam').value,
+          document.getElementById('editStorage').value && 'Storage: ' + document.getElementById('editStorage').value,
+          document.getElementById('editGpu').value     && 'GPU: '     + document.getElementById('editGpu').value,
+          document.getElementById('editDescription').value,
+        ].filter(Boolean).join('\n');
+        const resp = await fetch('/api/devices/' + id, {
+          method: 'PUT',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, type, price: 0, description: descParts,
+            cpu: document.getElementById('editCpu').value.trim(),
+            ram: document.getElementById('editRam').value.trim(),
+            storage: document.getElementById('editStorage').value.trim(),
+            gpu: document.getElementById('editGpu').value.trim(),
+          }),
+        });
+        const result = await resp.json();
+        if (resp.ok && result.success) { closeModal('editModalOverlay'); loadLenderDevices(); }
+        else throw new Error(result.message || 'แก้ไขไม่สำเร็จ');
+      } catch(err) { alert('เกิดข้อผิดพลาด: ' + err.message); }
+      finally { submitBtn.disabled = false; submitBtn.textContent = 'บันทึก'; }
+    });
+
+    // ── Delete ──────────────────────────────────────────────────────
+    document.addEventListener('click', async e => {
+      const btn = e.target.closest('.btn-card-del');
+      if (!btn) return;
+      const id   = btn.dataset.id;
+      const card = btn.closest('.rentout-card');
+      const name = card ? card.dataset.name : 'อุปกรณ์นี้';
+      if (!confirm('ลบ "' + name + '" ออกจากระบบ?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้')) return;
+      const token = getToken(); if(!token) { alert('กรุณาเข้าสู่ระบบก่อน'); return; }
+      btn.disabled = true; btn.textContent = '...';
+      try {
+        const resp   = await fetch('/api/devices/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+        const result = await resp.json();
+        if (resp.ok && result.success) loadLenderDevices();
+        else throw new Error(result.message || 'ลบไม่สำเร็จ');
+      } catch(err) { alert('เกิดข้อผิดพลาด: ' + err.message); btn.disabled = false; btn.textContent = '🗑 ลบ'; }
+    });
+
+  })();
   </script>
 </body>
 </html>

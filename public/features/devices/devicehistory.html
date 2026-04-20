@@ -36,6 +36,8 @@
     .btn-action-secondary:disabled{ opacity:0.5; cursor:not-allowed; }
     .btn-chat-hist{ background:#f1f5f9; color:#374151; border:1px solid #d1d5db; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer; }
     .btn-chat-hist:hover{ background:#e2e8f0; }
+    .btn-delete-hist{ background:#fff; color:#dc2626; border:1.5px solid #fca5a5; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer; transition:background .18s; }
+    .btn-delete-hist:hover{ background:#fef2f2; }
 
     /* Loading / empty states */
     .history-loading{ text-align:center; padding:56px 0; color:#9ca3af; font-size:15px; grid-column:1/-1; }
@@ -55,8 +57,10 @@
       </a>
       <nav class="nav">
         <a href="/features/auth/devices-auth.html">ค้นหาอุปกรณ์</a>
-        <a href="/features/devices/rentout.html">จัดการอุปกรณ์</a>
-        <a href="/features/devices/devicehistory.html" class="active">ประวัติการยืม</a>
+        <a href="/features/devices/rentout.html">จัดการอุปกรณ์เช่า</a>
+        <a href="/features/devices/devicehistory.html" class="active">ประวัติการเช่า</a>
+        <a href="/features/management/giveout.html">ยืมอุปกรณ์</a>
+
       </nav>
       <div class="header-actions" id="headerActions">
         <a href="/features/auth/login.html" class="btn-login">Login</a>
@@ -67,13 +71,13 @@
   <main class="rentout-page">
     <div class="container">
       <section class="rentout-head centered">
-        <h1>ประวัติการยืม</h1>
+        <h1>ประวัติการเช่า</h1>
       </section>
 
       <!-- Tab switcher -->
       <div class="history-tabs" role="tablist">
-        <button class="tab-btn active" data-tab="renter" role="tab" aria-selected="true">การยืมของฉัน</button>
-        <button class="tab-btn" data-tab="owner" role="tab" aria-selected="false">อุปกรณ์ที่ให้ยืม</button>
+        <button class="tab-btn active" data-tab="renter" role="tab" aria-selected="true">การเช่าของฉัน</button>
+        <button class="tab-btn" data-tab="owner" role="tab" aria-selected="false">อุปกรณ์ที่ให้เช่า</button>
       </div>
 
       <section class="rentout-list">
@@ -188,6 +192,11 @@
         return `<span class="badge ${s.cls}">${esc(s.label)}</span>`;
       }
 
+      /* ── Hidden entries (deleted by user, stored in localStorage) ───────── */
+      const HIDDEN_KEY = 'notelet_hidden_history';
+      function getHidden() { try { return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]')); } catch { return new Set(); } }
+      function addHidden(id) { try { const s = getHidden(); s.add(Number(id)); localStorage.setItem(HIDDEN_KEY, JSON.stringify([...s])); } catch {} }
+
       /* ── State ───────────────────────────────────────────────────────────── */
       let currentTab  = 'renter';
       let renterData  = [];
@@ -205,8 +214,11 @@
             fetch('/api/rental-requests/incoming', { headers }),
           ]);
           const [out, inc] = await Promise.all([outRes.json(), incRes.json()]);
-          renterData = Array.isArray(out.data) ? out.data : [];
-          ownerData  = Array.isArray(inc.data) ? inc.data  : [];
+          // Filter out borrow requests (totalPrice=0) — those are shown in borrowhistory.html
+          // Also filter out entries the user has locally deleted
+          const hidden = getHidden();
+          renterData = Array.isArray(out.data) ? out.data.filter(x => x.totalPrice > 0 && !hidden.has(Number(x.requestNo))) : [];
+          ownerData  = Array.isArray(inc.data) ? inc.data.filter(x => x.totalPrice > 0 && !hidden.has(Number(x.requestNo))) : [];
         } catch (e) {
           grid.innerHTML = '<div class="history-loading">เกิดข้อผิดพลาดในการโหลดข้อมูล — กรุณาลองใหม่</div>';
           console.error(e);
@@ -259,14 +271,18 @@
         el.dataset.status    = item.status || '';
 
         const otherName  = esc(isOwner ? (item.renterName || item.renterEmail || '') : (item.ownerName || item.ownerEmail || ''));
-        const otherRole  = isOwner ? 'ผู้ยืม' : 'เจ้าของ';
+        const otherRole  = isOwner ? 'ผู้เช่า' : 'เจ้าของ';
         const totalText  = typeof item.totalPrice === 'number' ? `${item.totalPrice.toFixed(2)} บาท` : '';
 
         /* Action buttons */
         let actionBtns = '';
         if (isOwner) {
+          if (item.status === 'Request Pending') {
+            actionBtns += `<button class="btn-action-primary btn-approve-req" data-id="${item.requestNo}">✓ อนุมัติ</button>`;
+            actionBtns += `<button class="btn-action-secondary btn-reject-req" data-id="${item.requestNo}" style="color:#dc2626;border-color:#dc2626;">✕ ปฏิเสธ</button>`;
+          }
           if (item.status === 'Booking Confirmed') {
-            actionBtns += `<button class="btn-action-primary btn-mark-active" data-id="${item.requestNo}">✓ ส่งอุปกรณ์ให้ผู้ยืมแล้ว</button>`;
+            actionBtns += `<button class="btn-action-primary btn-mark-active" data-id="${item.requestNo}">✓ ส่งอุปกรณ์ให้ผู้เช่าแล้ว</button>`;
           }
           if (item.status === 'Booking Confirmed' || item.status === 'Rental Active') {
             actionBtns += `<button class="btn-action-secondary btn-mark-returned" data-id="${item.requestNo}">✓ รับคืนอุปกรณ์แล้ว</button>`;
@@ -278,7 +294,18 @@
           }
         }
 
-        const chatBtn   = `<button class="btn-chat-hist btn-open-แชท" data-deviceno="${item.deviceNo}" onclick="window.location.href='/features/devices/manage.html">💬 แชท</button>`;
+        const DONE_STATUSES = ['Rental Completed', 'cancelled', 'rejected'];
+        const isDone = DONE_STATUSES.includes(item.status);
+
+        const chatBtn = isDone ? '' : `<button class="btn-chat-hist btn-open-แชท"
+          data-deviceno="${item.deviceNo}"
+          data-devicename="${esc(item.deviceName || '')}"
+          data-ownername="${esc(isOwner ? (item.renterName || item.renterEmail || '') : (item.ownerName || item.ownerEmail || ''))}"
+          data-requestno="${item.requestNo}"
+          data-ppd="${item.pricePerDay || 0}"
+          >💬 แชท</button>`;
+        const deleteBtn = isDone
+          ? `<button class="btn-delete-hist btn-delete-entry" data-id="${item.requestNo}">🗑 ลบ</button>` : '';
         let reviewBtn = '';
         if (!isOwner && (item.status === 'Rental Active' || item.status === 'Rental Completed')) {
           const _ownerNm = esc(item.ownerName || item.ownerEmail || 'เจ้าของ');
@@ -288,8 +315,8 @@
           reviewBtn = `<button class="btn-action-secondary btn-user-review-req" data-request-no="${item.requestNo}" data-device-no="${item.deviceNo}" data-other-name="${_renterNm}" data-role="owner" type="button">⭐ รีวิวผู้เช่า</button>`;
         }
 
-        const actionsBlock = (actionBtns || chatBtn || reviewBtn)
-          ? `<div class="card-actions">${actionBtns}${chatBtn}${reviewBtn}</div>` : '';
+        const actionsBlock = (actionBtns || chatBtn || reviewBtn || deleteBtn)
+          ? `<div class="card-actions">${actionBtns}${chatBtn}${reviewBtn}${deleteBtn}</div>` : '';
 
         el.innerHTML = `
           <div class="card-media-large" aria-hidden></div>
@@ -389,6 +416,46 @@
         }
       }
 
+      async function approveRequest(requestNo, btn) {
+        if (!confirm('ยืนยันการอนุมัติคำขอเช่านี้?')) return;
+        btn.disabled = true;
+        const orig = btn.textContent;
+        btn.textContent = 'กำลังบันทึก...';
+        try {
+          const token = localStorage.getItem('access_token') || '';
+          const res = await fetch(`/api/rental-requests/${requestNo}/confirm`, {
+            method: 'PATCH',
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+          });
+          if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.message || 'HTTP ' + res.status); }
+          await loadData();
+        } catch (e) {
+          alert('เกิดข้อผิดพลาด: ' + (e.message || 'กรุณาลองใหม่'));
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
+      }
+
+      async function rejectRequest(requestNo, btn) {
+        if (!confirm('ยืนยันการปฏิเสธคำขอเช่านี้?')) return;
+        btn.disabled = true;
+        const orig = btn.textContent;
+        btn.textContent = 'กำลังบันทึก...';
+        try {
+          const token = localStorage.getItem('access_token') || '';
+          const res = await fetch(`/api/rental-requests/${requestNo}/reject`, {
+            method: 'PATCH',
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+          });
+          if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.message || 'HTTP ' + res.status); }
+          await loadData();
+        } catch (e) {
+          alert('เกิดข้อผิดพลาด: ' + (e.message || 'กรุณาลองใหม่'));
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
+      }
+
       /* ── Event wiring ────────────────────────────────────────────────────── */
       // Tabs
       document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -411,9 +478,43 @@
         const cancelBtn = e.target.closest('.btn-cancel-req');
         if (cancelBtn) { cancelRequest(Number(cancelBtn.dataset.id), cancelBtn); return; }
 
+        const approveBtn = e.target.closest('.btn-approve-req');
+        if (approveBtn) { approveRequest(Number(approveBtn.dataset.id), approveBtn); return; }
+
+        const rejectBtn = e.target.closest('.btn-reject-req');
+        if (rejectBtn) { rejectRequest(Number(rejectBtn.dataset.id), rejectBtn); return; }
+
+        const deleteBtn = e.target.closest('.btn-delete-entry');
+        if (deleteBtn) {
+          if (!confirm('ลบรายการนี้ออกจากประวัติ?')) return;
+          const id = Number(deleteBtn.dataset.id);
+          addHidden(id);
+          const card = deleteBtn.closest('article');
+          if (card) {
+            card.style.transition = 'opacity .25s';
+            card.style.opacity = '0';
+            setTimeout(() => {
+              card.remove();
+              // Re-check if tab is empty
+              const grid = document.getElementById('historyCards');
+              if (!grid.querySelector('article')) {
+                grid.innerHTML = '<p class="history-loading">ยังไม่มีรายการ</p>';
+              }
+            }, 280);
+          }
+          return;
+        }
+
         const chatBtn = e.target.closest('.btn-open-แชท');
         if (chatBtn) {
-          window.location.href = `/features/devices/manage.html`;
+          const p = new URLSearchParams({
+            deviceId:    chatBtn.dataset.deviceno  || '',
+            deviceName:  chatBtn.dataset.devicename || '',
+            ownerName:   chatBtn.dataset.ownername  || '',
+            requestNo:   chatBtn.dataset.requestno  || '',
+            pricePerDay: chatBtn.dataset.ppd        || '0',
+          });
+          window.location.href = `/features/chat/direct-chat.html?${p.toString()}`;
           return;
         }
 
@@ -434,138 +535,6 @@
       /* ── Boot ─────────────────────────────────────────────────────────────── */
       loadData();
     })();
-
-    // Make the history start empty until the user checks out.
-    // This clears any previously-saved demo history ONE time.
-    (function(){
-      try{
-        if(!localStorage.getItem(HISTORY_INIT_KEY)){
-          localStorage.setItem(HISTORY_KEY, '[]');
-          localStorage.setItem(HISTORY_INIT_KEY, '1');
-        }
-      }catch(e){}
-    })();
-
-    function getHistory(){ try{ return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }catch(e){ return []; } }
-    function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-    function normalize(it){
-      const source = it?.source || 'rent';
-      return {
-        id: it?.id,
-        source,
-        name: it?.name || 'Device Name',
-        price: it?.price || '',
-        image: it?.image || it?.img || '',
-        status: it?.status || 'Completed',
-        date: it?.date || '',
-        pickup: it?.pickup || '',
-        returnt: it?.returnt || '',
-        location: it?.location || 'Pick up or return Location',
-        total: (typeof it?.total === 'number') ? it.total : null,
-        days: (typeof it?.days === 'number') ? it.days : null,
-        lessor: it?.lessor || (source === 'borrow' ? 'CSKMITL' : 'Lessor Name')
-      };
-    }
-
-    function splitDates(dateText){
-      const raw = String(dateText || '').trim();
-      if(!raw) return { pick:'', ret:'' };
-      const parts = raw.split(' - ').map(s=>s.trim()).filter(Boolean);
-      if(parts.length === 1) return { pick: parts[0], ret: '' };
-      return { pick: parts[0], ret: parts[1] };
-    }
-
-    function badgeClass(status){
-      const s = String(status || '').trim().toLowerCase();
-      if(s === 'requested') return 'badge-active';
-      if(s === 'rented') return 'badge-rented';
-      if(s === 'returned') return 'badge-returned';
-      if(s === 'completed') return 'badge-returned';
-      return 'badge-active';
-    }
-
-    function durationLabel(source){
-      return source === 'borrow' ? 'Borrowing Duration' : 'Renting Duration';
-    }
-
-    function render(){
-      const grid = document.getElementById('historyCards');
-      const items = getHistory().map(normalize);
-
-      if(!items.length){
-        grid.innerHTML = '<p class="meta small" style="grid-column:1/-1;justify-self:center;padding:24px 0;">No device history.</p>';
-        return;
-      }
-
-      grid.innerHTML = '';
-      items.forEach((it)=>{
-        const dates = splitDates(it.date);
-        const statusText = String(it.status || 'Completed');
-        const badge = badgeClass(statusText);
-
-        const lessorText = (it.source === 'borrow' && (it.lessor === 'ComSci, KMITL')) ? 'CSKMITL' : it.lessor;
-
-        let durationText = '';
-        if(typeof it.days === 'number'){
-          durationText = `${durationLabel(it.source)} · ${it.days} days`;
-        }
-
-        let totalText = '';
-        if(it.source !== 'borrow'){
-          if(typeof it.total === 'number') totalText = `${it.total.toFixed(2)} Baht`;
-          else if(it.price) totalText = String(it.price);
-        }
-
-        const reviewBtn = (it.source === 'rent')
-          ? '<button class="btn btn-outline btn-review" type="button">Review</button>'
-          : '';
-
-        const card = document.createElement('article');
-        card.className = 'rentout-card' + (it.source === 'borrow' ? ' borrow-card' : '');
-        card.setAttribute('data-id', String(it.id ?? ''));
-        card.setAttribute('data-status', String(statusText).toLowerCase());
-
-        card.innerHTML = `
-          <div class="card-media-large" aria-hidden></div>
-          <div class="card-content">
-            <h3 class="device-name">${escapeHtml(it.name)}</h3>
-            ${durationText ? `<div class="meta small">${escapeHtml(durationText)}</div>` : ''}
-
-            <div class="meta small">Status · <span class="badge ${badge}">${escapeHtml(statusText)}</span></div>
-            ${dates.pick ? `<div class="meta small">Pick up · ${escapeHtml(dates.pick)}</div>` : ''}
-            ${dates.ret ? `<div class="meta small">Return · ${escapeHtml(dates.ret)}</div>` : ''}
-            ${totalText ? `<div class="meta small">Total Price · ${escapeHtml(totalText)}</div>` : ''}
-
-            <div class="card-divider"></div>
-
-            <div class="card-footer">
-              <div class="avatar" aria-hidden></div>
-              <div class="lessee">
-                <div class="lessee-name">${escapeHtml(lessorText)}</div>
-                ${reviewBtn}
-              </div>
-            </div>
-          </div>
-        `;
-
-        if(it.image){
-          const media = card.querySelector('.card-media-large');
-          if(media){
-            let imgUrl = String(it.image);
-            if (imgUrl.startsWith('[')) { try { const a = JSON.parse(imgUrl); imgUrl = a[0] || ''; } catch(e) {} }
-            imgUrl = normalizeImgUrl(imgUrl);
-            if (imgUrl) {
-              media.style.backgroundImage = `url("${imgUrl.replace(/"/g, '\\"')}")`;
-              media.style.backgroundSize = 'cover';
-              media.style.backgroundPosition = 'center';
-            }
-          }
-        }
-
-        grid.appendChild(card);
-      });
-    }
 
     // Review modal logic (history + write views) — same behavior as rentout
     (function(){

@@ -2,7 +2,7 @@
 // ========================================
 // Authentication & API Management
 // ========================================
-const API_BASE_URL = (typeof window !== 'undefined' && window.NOTELET_API_URL) ? window.NOTELET_API_URL : '';
+const API_BASE_URL = typeof NOTELET_API_URL !== 'undefined' && NOTELET_API_URL ? NOTELET_API_URL : '';
 // ========================================
 // Auth Helper Functions
 // ========================================

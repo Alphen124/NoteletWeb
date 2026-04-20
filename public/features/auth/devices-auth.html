@@ -199,8 +199,9 @@
       </a>
       <nav class="nav">
         <a href="/features/auth/devices-auth.html" class="active">ค้นหาอุปกรณ์</a>
-        <a href="/features/devices/rentout.html">จัดการอุปกรณ์</a>
-        <a href="/features/devices/devicehistory.html">ประวัติการยืม</a>
+        <a href="/features/devices/rentout.html">จัดการอุปกรณ์เช่า</a>
+        <a href="/features/management/giveout.html">ยืมอุปกรณ์</a>
+
       </nav>
       <div class="header-actions" id="headerActions">
         <!-- filled by JS -->
@@ -428,7 +429,7 @@
       const id         = d.deviceNo || d.id || '';
       const name       = d.name || 'อุปกรณ์';
       const deviceType = d.type || '';
-      const isAdmin    = d.isAdminDevice === true;
+      const isAdmin    = Number(d.price) === 0;
       const price      = isAdmin ? '📚 ยืมจากคณะ (ฟรี)' : (d.price != null ? `${Number(d.price).toFixed(2)} บาท/วัน` : 'ฟรี');
       const statusKey  = (d.status || '').toLowerCase();
       const badgeLabel = STATUS_LABEL[statusKey] || d.status || 'ไม่ทราบสถานะ';
@@ -440,8 +441,9 @@
         ? `<img src="${imgUrl}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         : '';
 
+      const cardHref = isAdmin ? '/features/management/giveout.html' : `/features/devices/rentdevice.html?id=${encodeURIComponent(id)}`;
       return `
-        <a class="device-card${isAdmin ? ' admin-card' : ''}" href="/features/devices/rentdevice.html?id=${encodeURIComponent(id)}" aria-label="${name}">
+        <a class="device-card${isAdmin ? ' admin-card' : ''}" href="${cardHref}" aria-label="${name}">
           <div class="device-card-img">
             ${imgHtml}
             <span class="placeholder-icon" ${imgUrl ? 'style="display:none"' : ''}>💻</span>
@@ -456,7 +458,7 @@
             <div class="device-card-price" style="${isAdmin ? 'color:#0a5ba8;font-size:14px;' : ''}">${price}</div>
             <div class="device-card-meta" id="star-${id}">${isAdmin ? '' : renderStars(d.rating||0)}</div>
             ${ownerName && !isAdmin ? `<div class="device-owner">👤 ${ownerName}</div>` : ''}
-            <button class="device-card-btn${isAdmin ? ' borrow' : ''}" onclick="event.preventDefault();goDevice(${JSON.stringify(id)})">
+            <button class="device-card-btn${isAdmin ? ' borrow' : ''}" onclick="event.preventDefault();${isAdmin ? `window.location.href='/features/management/giveout.html'` : `goDevice(${JSON.stringify(id)})`}">
               ${isAdmin ? '📚 ยืมจากคณะ' : (available ? '🛒 เช่าอุปกรณ์' : '🔒 ไม่ว่าง')}
             </button>
           </div>

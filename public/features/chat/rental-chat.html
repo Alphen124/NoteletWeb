@@ -1090,10 +1090,14 @@ function openChat() {
 function connectWS(room) {
   setConn('connecting', 'กำลังเชื่อมต่อ...');
   // Vercel serverless does not support WebSocket upgrades, so connect directly
-  // to the Go backend on Railway instead of routing through location.host.
-  const apiBase = (window.NOTELET_API_URL && window.NOTELET_API_URL !== '')
+  // to the Go backend. On localhost, target port 3001 directly.
+  let apiBase = (window.NOTELET_API_URL && window.NOTELET_API_URL !== '')
     ? window.NOTELET_API_URL
     : 'https://noteletwebapi-production.up.railway.app';
+  if (!window.NOTELET_API_URL &&
+      (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    apiBase = `http://localhost:3001`;
+  }
   const wsProto = apiBase.startsWith('https') ? 'wss' : 'ws';
   const wsHost = apiBase.replace(/^https?:\/\//, '');
   ws = new WebSocket(`${wsProto}://${wsHost}/api/chat/ws?token=${encodeURIComponent(user.token)}&room=${encodeURIComponent(room)}`);

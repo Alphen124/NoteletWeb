@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('editPrice').value = card.dataset.price ?? '';
         document.getElementById('editDescription').value =
             card.dataset.description ?? '';
+        document.getElementById('editSpecCpu').value = card.dataset.cpu ?? '';
+        document.getElementById('editSpecRam').value = card.dataset.ram ?? '';
+        // Parse stored storage value (e.g. "512GB SSD") into two selects
+        const _storageParts = (card.dataset.storage ?? '').split(' ');
+        document.getElementById('editSpecStorageSize').value = _storageParts[0] ?? '';
+        document.getElementById('editSpecStorageType').value = _storageParts[1] ?? '';
+        document.getElementById('editSpecGpu').value = card.dataset.gpu ?? '';
         const previewContainer = document.getElementById('editImagePreview');
         if (previewContainer)
             previewContainer.innerHTML = '';
@@ -89,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let isAdmin = false;
         try {
             const pl = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-            isAdmin = !!pl.is_admin;
+            isAdmin = !!pl.is_admin || !!pl.is_authorized_lender;
         }
         catch { /* ignore */ }
         const deviceId = document.getElementById('editDeviceId').value;
@@ -102,6 +109,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const priceRaw = document.getElementById('editPrice').value;
         const price = isAdmin ? 0 : parseFloat(priceRaw);
         const description = document.getElementById('editDescription').value.trim();
+        const cpu = document.getElementById('editSpecCpu').value.trim();
+        const ram = document.getElementById('editSpecRam').value;
+        const storageSize = document.getElementById('editSpecStorageSize').value;
+        const storageType = document.getElementById('editSpecStorageType').value;
+        const storage = [storageSize, storageType].filter(Boolean).join(' ');
+        const gpu = document.getElementById('editSpecGpu').value.trim();
         if (!name || !type || (!isAdmin && !price)) {
             alert('Please fill in all required fields');
             return;
@@ -146,6 +159,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 type,
                 price,
                 description,
+                cpu,
+                ram,
+                storage,
+                gpu,
                 imageUrl: imageUrls.length > 0 ? JSON.stringify(imageUrls) : '',
             };
             submitBtn.textContent = 'Updating...';
@@ -165,8 +182,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     preview.innerHTML = '';
                 alert('✅ Device updated successfully!');
                 if (typeof loadMyDevices === 'function')
-                    await loadMyDevices();
-            }
+                    await loadMyDevices();                if (typeof _lendLoadMyDevices === 'function')
+                    _lendLoadMyDevices();            }
             else {
                 throw new Error(result.message ?? result.error ?? 'Failed to update device');
             }
@@ -212,8 +229,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (response.ok && result.success) {
                 alert('✅ Device deleted successfully!');
                 if (typeof loadMyDevices === 'function')
-                    await loadMyDevices();
-            }
+                    await loadMyDevices();                if (typeof _lendLoadMyDevices === 'function')
+                    _lendLoadMyDevices();            }
             else {
                 throw new Error(result.message ?? result.error ?? 'Failed to delete device');
             }

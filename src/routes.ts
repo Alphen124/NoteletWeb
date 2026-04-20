@@ -74,4 +74,14 @@ export function setRoutes(app: Application): void {
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok' });
   });
+
+  // Staff borrow management page
+  app.get('/staff-borrow', (_req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'features', 'management', 'staff-borrow.html'));
+  });
+
+  // Direct 1-on-1 chat with device owner
+  app.get('/direct-chat', (_req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'features', 'chat', 'direct-chat.html'));
+  });
 }

@@ -198,8 +198,9 @@
       <nav class="nav">
         <a href="/">หน้าแรก</a>
         <a href="/features/devices/devices.html" class="active">ค้นหาอุปกรณ์</a>
-        <a href="/features/devices/rentout.html">จัดการอุปกรณ์</a>
-        <a href="/features/devices/devicehistory.html">ประวัติการยืม</a>
+        <a href="/features/devices/rentout.html">จัดการอุปกรณ์เช่า</a>
+        <a href="/features/management/giveout.html">ยืมอุปกรณ์</a>
+        
       </nav>
       <div class="header-actions" id="headerActions">
         <a href="/features/auth/login.html" class="btn-login">Login</a>
@@ -421,9 +422,11 @@
       const statusKey  = (d.status || '').toLowerCase();
       const badgeLabel = STATUS_LABEL[statusKey] || d.status || 'ไม่ทราบสถานะ';
       const imgUrl     = parseImgUrl(d.imageUrl);
-      const isAdmin    = d.isAdminDevice === true;
+      const isAdmin    = Number(d.price) === 0;
       const displayPrice = isAdmin ? '📚 ยืมจากคณะ (ฟรี)' : price;
-      const cardHref = `/features/devices/rentdevice.html?id=${encodeURIComponent(id)}`;
+      const cardHref = isAdmin
+        ? `/features/management/giveout.html`
+        : `/features/devices/rentdevice.html?id=${encodeURIComponent(id)}`;
 
       const imgHtml = imgUrl
         ? `<img src="${imgUrl}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
@@ -444,7 +447,7 @@
             <div class="device-card-name">${name}</div>
             <div class="device-card-price" style="${isAdmin ? 'color:#0a5ba8;font-size:14px;' : ''}">${displayPrice}</div>
             <div class="device-card-meta" id="star-${id}">${isAdmin ? '' : renderStars(d.rating||0)}</div>
-            <button class="device-card-btn${isAdmin ? ' borrow' : ''}" onclick="event.preventDefault();goDevice(${JSON.stringify(id)})">
+            <button class="device-card-btn${isAdmin ? ' borrow' : ''}" onclick="event.preventDefault();${isAdmin ? `window.location.href='/features/management/giveout.html'` : `goDevice(${JSON.stringify(id)})`}">
               ${isAdmin ? '📚 ยืมจากคณะ' : '🛒 เช่าอุปกรณ์'}
             </button>
           </div>

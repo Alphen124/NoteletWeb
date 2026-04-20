@@ -251,6 +251,29 @@
   margin-top: 6px;
 }
 
+/* Dismiss button */
+._cn_item_wrap { position: relative; }
+._cn_dismiss {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s, color .15s;
+  z-index: 1;
+}
+._cn_dismiss:hover { background: rgba(239,68,68,.1); color: #ef4444; }
+
 /* Empty state */
 ._cn_empty {
   padding: 44px 20px;
@@ -390,25 +413,61 @@
     }
   }
 
+  /* ── Dismissed storage (key = deviceId → latest dismissed notifId) ── */
+  const DISMISSED_KEY = 'notelet_cn_dismissed';
+  function getDismissed(): Record<string, number> {
+    try { return JSON.parse(localStorage.getItem(DISMISSED_KEY) ?? '{}'); } catch { return {}; }
+  }
+  function saveDismissed(d: Record<string, number>): void {
+    try { localStorage.setItem(DISMISSED_KEY, JSON.stringify(d)); } catch {}
+  }
+
   function renderList(items: ChatNotification[], container: HTMLElement): void {
     if (!items.length) {
       container.innerHTML = `<div class="_cn_empty"><div class="_cn_empty_icon">💬</div><div>ยังไม่มีการแจ้งเตือน</div></div>`;
       return;
     }
-    container.innerHTML = items.map(n => `
-      <a class="_cn_item ${n.isRead ? '' : 'unread'}"
-         href="${escHtml(chatLink(n))}"
-         data-nid="${n.notifId}"
-         onclick="window._cnClick(${n.notifId})">
-        <div class="_cn_av">${escHtml(initials(n.senderName))}</div>
-        <div class="_cn_body">
-          <div class="_cn_title">${escHtml(n.senderName)} · ${escHtml(n.deviceName)}</div>
-          <div class="_cn_prev">${escHtml(n.preview ?? 'ส่งข้อความใหม่')}</div>
-          <div class="_cn_time">🕐 ${timeAgo(n.createdAt)}</div>
-        </div>
-        ${n.isRead ? '' : '<div class="_cn_dot"></div>'}
-      </a>
-    `).join('');
+
+    // Dedup: keep only the latest notification per deviceId
+    const seen = new Set<string>();
+    const deduped = items.filter(n => {
+      const key = String(n.deviceId ?? n.roomName ?? n.notifId);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Filter out items the user has dismissed (unless a newer message arrived)
+    const dismissed = getDismissed();
+    const visible = deduped.filter(n => {
+      const key = String(n.deviceId ?? '');
+      return !dismissed[key] || dismissed[key] < n.notifId;
+    });
+
+    if (!visible.length) {
+      container.innerHTML = `<div class="_cn_empty"><div class="_cn_empty_icon">💬</div><div>ยังไม่มีการแจ้งเตือน</div></div>`;
+      return;
+    }
+
+    container.innerHTML = visible.map(n => {
+      const deviceKey = String(n.deviceId ?? '');
+      return `
+      <div class="_cn_item_wrap">
+        <a class="_cn_item ${n.isRead ? '' : 'unread'}"
+           href="${escHtml(chatLink(n))}"
+           data-nid="${n.notifId}"
+           onclick="window._cnClick(${n.notifId})">
+          <div class="_cn_av">${escHtml(initials(n.senderName))}</div>
+          <div class="_cn_body">
+            <div class="_cn_title">${escHtml(n.deviceName)}</div>
+            <div class="_cn_prev">${escHtml(n.preview ?? 'ส่งข้อความใหม่')}</div>
+            <div class="_cn_time">🕐 ${timeAgo(n.createdAt)}</div>
+          </div>
+          ${n.isRead ? '' : '<div class="_cn_dot"></div>'}
+        </a>
+        <button class="_cn_dismiss" onclick="window._cnDismiss(${n.notifId}, '${deviceKey}'); event.stopPropagation();" title="ปิด">×</button>
+      </div>`;
+    }).join('');
   }
 
   /* ── Click handler (global so inline onclick works) ─────────── */
@@ -431,6 +490,34 @@
     if (b && b.classList.contains('on')) {
       const cur = parseInt(b.textContent ?? '1') || 1;
       setBadge(Math.max(0, cur - 1));
+    }
+  };
+
+  /* ── Dismiss handler ─────────────────────────────────────────── */
+  window._cnDismiss = function (notifId: number, deviceKey: string): void {
+    const d = getDismissed();
+    d[deviceKey] = notifId;
+    saveDismissed(d);
+    const wrap = document.querySelector(`._cn_item_wrap:has([data-nid="${notifId}"])`);
+    if (wrap) {
+      (wrap as HTMLElement).style.transition = 'opacity .2s';
+      (wrap as HTMLElement).style.opacity = '0';
+      setTimeout(() => {
+        wrap.remove();
+        const list = document.getElementById('_cnList');
+        if (list && !list.querySelector('._cn_item_wrap')) {
+          list.innerHTML = `<div class="_cn_empty"><div class="_cn_empty_icon">💬</div><div>ยังไม่มีการแจ้งเตือน</div></div>`;
+        }
+      }, 220);
+    }
+    // decrement badge if unread
+    const item = document.querySelector(`[data-nid="${notifId}"]`);
+    if (item && item.classList.contains('unread')) {
+      const b = document.getElementById('_cnBadge');
+      if (b && b.classList.contains('on')) {
+        const cur = parseInt(b.textContent ?? '1') || 1;
+        setBadge(Math.max(0, cur - 1));
+      }
     }
   };
 

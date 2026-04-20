@@ -9,6 +9,7 @@
   <script src="/js/config.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/chat-notifications.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <style>
     .rentout-card { cursor:pointer; transition:transform .2s,box-shadow .2s; }
     .rentout-card:hover { transform:translateY(-4px); box-shadow:0 8px 16px rgba(0,0,0,.1); }
@@ -238,6 +239,17 @@
     .cr-open-btn:hover { opacity:.88; }
     .chat-room-item.unread .cr-open-btn { background:linear-gradient(135deg,#1d4ed8,#2563eb); }
 
+    /* Chat card wrapper + dismiss */
+    .cr-card-wrap { position:relative; }
+    .cr-dismiss-btn {
+      position:absolute; top:8px; left:8px; z-index:2;
+      background:rgba(0,0,0,.45); color:#fff; border:none; border-radius:50%;
+      width:26px; height:26px; font-size:16px; line-height:1; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      transition:background .15s;
+    }
+    .cr-dismiss-btn:hover { background:rgba(239,68,68,.85); }
+
     /* ── Chat Notification Bell ──────────────────────────────────── */
     .notif-bell-wrap { position:relative; }
     .notif-bell-btn {
@@ -287,6 +299,76 @@
     .notif-preview { font-size:12px; color:#6b7280; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .notif-time { font-size:11px; color:#bbb; white-space:nowrap; margin-top:2px; }
     .notif-empty { text-align:center; padding:32px 16px; color:#bbb; font-size:13px; }
+
+    /* ── Dashboard ──────────────────────────────────────── */
+    .dash-panel {
+      background: linear-gradient(135deg,#f0f6ff,#e8f2fe);
+      border: 1px solid #dce8fd; border-radius: 20px;
+      padding: 24px 26px; margin-bottom: 28px;
+    }
+    /* header row */
+    .dash-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:8px; }
+    .dash-title  { font-size:15px; font-weight:700; color:#043873; margin:0; }
+    .dash-sub    { font-size:12px; color:#9ca3af; margin-top:2px; }
+    .dash-refresh-btn {
+      background:#fff; border:1px solid #dce8fd; border-radius:8px;
+      padding:6px 14px; font-size:12px; font-weight:600; color:#2563eb;
+      cursor:pointer; transition:background .15s;
+    }
+    .dash-refresh-btn:hover { background:#e8f0fe; }
+    /* KPI row */
+    .dash-kpi-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; margin-bottom:20px; }
+    .kpi-card {
+      border-radius:14px; padding:18px 20px;
+      color:#fff; position:relative; overflow:hidden;
+      box-shadow:0 4px 16px rgba(0,0,0,.12);
+      transition:transform .15s,box-shadow .15s;
+    }
+    .kpi-card:hover { transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,.16); }
+    .kpi-card::after { content:''; position:absolute; right:-18px; top:-18px; width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,.12); }
+    .kpi-card--blue   { background:linear-gradient(135deg,#1d4ed8,#3b82f6); }
+    .kpi-card--orange { background:linear-gradient(135deg,#b45309,#f59e0b); }
+    .kpi-card--green  { background:linear-gradient(135deg,#15803d,#22c55e); }
+    .kpi-card--purple { background:linear-gradient(135deg,#6d28d9,#a78bfa); }
+    .kpi-icon  { font-size:22px; margin-bottom:8px; }
+    .kpi-val   { font-size:30px; font-weight:800; line-height:1; letter-spacing:-.5px; }
+    .kpi-val.kpi-val--sm { font-size:22px; }
+    .kpi-label { font-size:11px; font-weight:600; opacity:.82; margin-top:5px; letter-spacing:.3px; }
+    .kpi-trend { font-size:11px; margin-top:6px; opacity:.75; }
+    /* charts row */
+    .dash-charts-row { display:grid; grid-template-columns:1fr 200px; gap:16px; margin-bottom:16px; align-items:stretch; }
+    @media(max-width:680px){ .dash-charts-row { grid-template-columns:1fr; } }
+    .dash-chart-card {
+      background:#fff; border-radius:14px; padding:16px 18px;
+      box-shadow:0 2px 10px rgba(4,56,115,.07);
+    }
+    .dash-chart-card-title { font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.6px; margin-bottom:12px; }
+    .dash-chart-card canvas { max-width:100%; }
+    /* donut */
+    .dash-donut-wrap { display:flex; flex-direction:column; align-items:center; }
+    .dash-donut-wrap canvas { width:140px !important; height:140px !important; }
+    .dash-chart-legend { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; justify-content:center; }
+    .dash-legend-item  { display:flex; align-items:center; gap:4px; font-size:10px; color:#555; font-weight:600; }
+    .dash-legend-dot   { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    /* bar chart full-width */
+    .dash-bar-row { margin-bottom:16px; }
+    /* alerts */
+    .dash-alerts { display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+    .dash-alert {
+      display:flex; align-items:flex-start; gap:10px;
+      background:#fff; border-radius:10px; padding:10px 14px;
+      box-shadow:0 1px 6px rgba(4,56,115,.06);
+      border-left:4px solid #e5e7eb;
+      font-size:13px;
+    }
+    .dash-alert.alert-warn  { border-left-color:#f59e0b; }
+    .dash-alert.alert-info  { border-left-color:#3b82f6; }
+    .dash-alert.alert-ok    { border-left-color:#22c55e; }
+    .dash-alert.alert-danger{ border-left-color:#ef4444; }
+    .dash-alert-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+    .dash-alert-text { flex:1; color:#374151; line-height:1.45; }
+    .dash-alert-text strong { color:#1e2d4a; }
+    .dash-alerts-title { font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; }
   </style>
 </head>
 <body>
@@ -298,8 +380,11 @@
       </a>
       <nav class="nav">
         <a href="/features/auth/devices-auth.html">ค้นหาอุปกรณ์</a>
-        <a href="/features/devices/rentout.html" class="active">จัดการอุปกรณ์</a>
-        <a href="/features/devices/devicehistory.html">ประวัติการยืม</a>
+        <a href="/features/devices/rentout.html" class="active">จัดการอุปกรณ์เช่า</a>
+        <a href="/features/devices/devicehistory.html">ประวัติการเช่า</a>
+        <a href="/features/management/giveout.html">ยืมอุปกรณ์</a>
+
+
       </nav>
       <div class="header-actions" id="headerActions">
         <!-- Chat notification bell -->
@@ -326,11 +411,80 @@
   <main class="rentout-page">
     <div class="container">
       <section class="rentout-head centered" style="margin-bottom:0;">
-        <h1>จัดการอุปกรณ์</h1>
+        <h1>จัดการอุปกรณ์ให้เช่า</h1>
         <div class="add-device-wrap">
           <button id="openAddRent" class="btn btn-cta" type="button">⭐ เพิ่มอุปกรณ์</button>
         </div>
       </section>
+
+      <!-- Dashboard -->
+      <div class="dash-panel" id="rentDashPanel">
+        <!-- Header -->
+        <div class="dash-header">
+          <div>
+            <div class="dash-title"> Dashboard ภาพรวมการเช่า</div>
+            <div class="dash-sub" id="dashLastUpdated">อัปเดตอัตโนมัติเมื่อเข้าหน้า</div>
+          </div>
+          <button class="dash-refresh-btn" id="dashRefreshBtn" type="button">🔄 รีเฟรช</button>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="dash-kpi-row">
+          <div class="kpi-card kpi-card--blue">
+            <div class="kpi-icon"></div>
+            <div class="kpi-val" id="kpiTotal">—</div>
+            <div class="kpi-label">เครื่องทั้งหมด</div>
+            <div class="kpi-trend" id="kpiTotalSub">อุปกรณ์ในระบบ</div>
+          </div>
+          <div class="kpi-card kpi-card--orange">
+            <div class="kpi-icon"></div>
+            <div class="kpi-val" id="kpiRented">—</div>
+            <div class="kpi-label">เครื่องที่ถูกเช่า</div>
+            <div class="kpi-trend" id="kpiRentedSub">Booking Confirmed + Rental Active</div>
+          </div>
+          <div class="kpi-card kpi-card--green">
+            <div class="kpi-icon"></div>
+            <div class="kpi-val" id="kpiFree">—</div>
+            <div class="kpi-label">เครื่องว่าง</div>
+            <div class="kpi-trend" id="kpiFreeSub">พร้อมรับการเช่าใหม่</div>
+          </div>
+          <div class="kpi-card kpi-card--purple">
+            <div class="kpi-icon"></div>
+            <div class="kpi-val kpi-val--sm" id="kpiToday">—</div>
+            <div class="kpi-label">รายได้วันนี้</div>
+            <div class="kpi-trend" id="kpiTodaySub">เช่าเสร็จวันนี้</div>
+          </div>
+        </div>
+
+        <!-- Revenue Line + Status Donut -->
+        <div class="dash-charts-row">
+          <div class="dash-chart-card">
+            <div class="dash-chart-card-title">📈 รายได้รายเดือน (6 เดือนล่าสุด)</div>
+            <div style="position:relative;height:180px"><canvas id="rentRevenueChart"></canvas></div>
+          </div>
+          <div class="dash-chart-card">
+            <div class="dash-chart-card-title">🎯 สถานะคำขอ</div>
+            <div class="dash-donut-wrap">
+              <canvas id="rentStatusChart" width="140" height="140"></canvas>
+              <div class="dash-chart-legend" id="rentChartLegend"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rentals Bar Chart -->
+        <div class="dash-chart-card dash-bar-row">
+          <div class="dash-chart-card-title">📊 จำนวนคำขอเช่าต่ออุปกรณ์ (Top 8)</div>
+          <div style="position:relative;height:160px"><canvas id="rentBarChart"></canvas></div>
+        </div>
+
+        <!-- Alerts -->
+        <div>
+          <div class="dash-alerts-title">⚠️ การแจ้งเตือน</div>
+          <div class="dash-alerts" id="rentAlerts">
+            <div style="color:#bbb;font-size:13px;padding:8px">กำลังตรวจสอบ...</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Tabs -->
       <div class="page-tabs">
@@ -445,20 +599,7 @@
       }, 300);
     }
 
-    // ── Detect admin and show/hide price fields ────────────────────────
-    // Price fields start hidden (display:none in HTML);
-    // reveal them only for non-admin users.
-    var _isAdmin = false;
-    (function () {
-      try {
-        const tok = localStorage.getItem('access_token');
-        if (tok) {
-          const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-          _isAdmin = !!payload.is_admin;
-        }
-      } catch (_) {}
-      // NOTE: DOM manipulation moved to post-modal script block below
-    })();
+    // rentout.html is for rental devices only — no admin separation needed here
 
     // Load user's devices from API
     async function loadMyDevices() {
@@ -479,8 +620,12 @@
 
         const result = await response.json();
         
-        if (response.ok && result.success && result.data && result.data.data) {
-          displayDevices(result.data.data);
+        if (response.ok && result.success) {
+          // Handle both {data:{data:[...]}} and {data:[...]} shapes
+          const devices = Array.isArray(result.data) ? result.data
+            : (result.data && Array.isArray(result.data.data)) ? result.data.data
+            : null;
+          if (devices !== null) displayDevices(devices);
         }
       } catch (error) {
         console.error('Error loading devices:', error);
@@ -490,12 +635,20 @@
     // Display devices in the UI
     function displayDevices(devices) {
       const container = document.querySelector('.rentout-cards');
-      if (!container || !devices || devices.length === 0) return;
+      if (!container) return;
 
-      // Clear existing static cards
+      // Always clear existing cards first
       container.innerHTML = '';
 
-      devices.forEach(device => {
+      // Exclude borrow devices (price === 0) — those belong to giveout page only
+      const rentDevices = (devices || []).filter(d => Number(d.price) > 0);
+
+      if (rentDevices.length === 0) {
+        container.innerHTML = '<div class="req-empty"><div class="icon">📦</div><p>ไม่มีอุปกรณ์</p></div>';
+        return;
+      }
+
+      rentDevices.forEach(device => {
         container.appendChild(createDeviceCard(device));
       });
     }
@@ -511,6 +664,10 @@
       article.dataset.price = device.price;
       article.dataset.description = device.description || '';
       article.dataset.imageUrl = device.imageUrl || '';
+      article.dataset.cpu = device.cpu || '';
+      article.dataset.ram = device.ram || '';
+      article.dataset.storage = device.storage || '';
+      article.dataset.gpu = device.gpu || '';
 
       // Map status to badge (new rental lifecycle statuses)
       const statusMap = {
@@ -571,6 +728,10 @@
           <h3 class="device-name">${escapeHtml(device.name)}</h3>
           <div class="meta small">ประเภท · ${escapeHtml(device.type || 'อุปกรณ์')}</div>
           <div class="meta small">ราคา · $${device.price}/วัน</div>
+          ${device.cpu ? `<div class="meta small">CPU · ${escapeHtml(device.cpu)}</div>` : ''}
+          ${device.ram ? `<div class="meta small">RAM · ${escapeHtml(device.ram)}</div>` : ''}
+          ${device.storage ? `<div class="meta small">Storage · ${escapeHtml(device.storage)}</div>` : ''}
+          ${device.gpu ? `<div class="meta small">GPU · ${escapeHtml(device.gpu)}</div>` : ''}
           <div class="meta small">คะแนน · ${device.rating || 0} ⭐</div>
           <div class="meta small status-row">สถานะ · ${statusBadge}</div>
           <div class="meta small">เพิ่มเมื่อ · ${device.createdAt ? new Date(device.createdAt).toLocaleDateString() : 'เมื่อเร็วๆ นี้'}</div>
@@ -583,6 +744,198 @@
 
     // Simple HTML escaper
     function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // ── Dashboard helpers ────────────────────────────────────
+    let _rentStatusChart = null;
+    let _rentRevenueChart = null;
+    let _rentBarChart = null;
+
+    async function loadRentDashboard() {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      try {
+        const [devRes, incRes, outRes] = await Promise.all([
+          fetch('/api/devices/my', { headers: { 'Authorization': 'Bearer ' + token } }),
+          fetch('/api/rental-requests/incoming', { headers: { 'Authorization': 'Bearer ' + token } }),
+          fetch('/api/rental-requests/outgoing', { headers: { 'Authorization': 'Bearer ' + token } }),
+        ]);
+        const devData = await devRes.json();
+        const incData = await incRes.json();
+        const outData = await outRes.json();
+
+        const allDevices  = Array.isArray(devData.data) ? devData.data : (devData.data && Array.isArray(devData.data.data) ? devData.data.data : []);
+        const rentDevices = allDevices.filter(d => Number(d.price) > 0);
+        const incoming    = (Array.isArray(incData.data) ? incData.data : []).filter(r => Number(r.totalPrice) > 0);
+        const outgoing    = (Array.isArray(outData.data) ? outData.data : []).filter(r => Number(r.totalPrice) > 0);
+
+        const pending    = incoming.filter(r => r.status === 'Request Pending').length;
+        const active     = incoming.filter(r => r.status === 'Booking Confirmed' || r.status === 'Rental Active').length;
+        const completed  = incoming.filter(r => r.status === 'Rental Completed').length;
+        const rejected   = incoming.filter(r => r.status === 'rejected' || r.status === 'cancelled').length;
+        const totalDevs  = rentDevices.length;
+        const freeDevs   = Math.max(0, totalDevs - active);
+
+        // Today revenue
+        const todayStr = new Date().toISOString().split('T')[0];
+        const todayRev = incoming.filter(r => r.status === 'Rental Completed' && (r.endDate||'').startsWith(todayStr))
+          .reduce((s, r) => s + Number(r.totalPrice || 0), 0);
+        const totalRev = incoming.filter(r => r.status === 'Rental Completed')
+          .reduce((s, r) => s + Number(r.totalPrice || 0), 0);
+
+        // ── KPI Cards ───────────────────────────────────────
+        const setKpi = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+        setKpi('kpiTotal',  totalDevs);
+        setKpi('kpiRented', active);
+        setKpi('kpiFree',   freeDevs);
+        setKpi('kpiToday',  '฿' + todayRev.toLocaleString('th-TH', {maximumFractionDigits:0}));
+        setKpi('kpiTotalSub',  'รวมรายได้ ฿' + totalRev.toLocaleString('th-TH',{maximumFractionDigits:0}));
+        setKpi('kpiRentedSub', active + '/' + totalDevs + ' เครื่อง');
+        setKpi('kpiFreeSub',   freeDevs + ' เครื่อง พร้อมรับเช่าใหม่');
+        setKpi('kpiTodaySub',  completed + ' รายการเสร็จสิ้นทั้งหมด');
+        const upd = document.getElementById('dashLastUpdated');
+        if (upd) upd.textContent = 'อัปเดต: ' + new Date().toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit'});
+
+        // ── Donut ───────────────────────────────────────────────────
+        const ctxD = document.getElementById('rentStatusChart');
+        const legendEl = document.getElementById('rentChartLegend');
+        if (ctxD && typeof Chart !== 'undefined') {
+          if (_rentStatusChart) _rentStatusChart.destroy();
+          const total = pending + active + completed + rejected;
+          const dLabels = ['รอยืนยัน', 'กำลังเช่า', 'เสร็จสิ้น', 'ปฏิเสธ/ยกเลิก'];
+          const dColors = ['#f59e0b','#3b82f6','#22c55e','#ef4444'];
+          const dData   = total === 0 ? [1,0,0,0] : [pending, active, completed, rejected];
+          _rentStatusChart = new Chart(ctxD, {
+            type: 'doughnut',
+            data: { labels: dLabels, datasets: [{ data: dData, backgroundColor: dColors, borderColor: '#fff', borderWidth: 3, hoverOffset: 8 }] },
+            options: {
+              cutout: '70%', responsive: false,
+              animation: { animateRotate: true, duration: 700 },
+              plugins: { legend: { display:false }, tooltip: { callbacks: { label: c => ' '+c.label+': '+(total===0?'ยังไม่มี':c.raw+' รายการ') } } },
+            },
+          });
+          if (legendEl) legendEl.innerHTML = dLabels.map((l,i)=>
+            '<div class="dash-legend-item"><div class="dash-legend-dot" style="background:'+dColors[i]+'"></div>'+l+'</div>').join('');
+        }
+
+        // ── Revenue Line Chart (last 6 months) ─────────────────────
+        const ctxL = document.getElementById('rentRevenueChart');
+        if (ctxL && typeof Chart !== 'undefined') {
+          // Build 6-month buckets
+          const now = new Date();
+          const months = [];
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            months.push({ label: d.toLocaleDateString('th-TH',{month:'short',year:'2-digit'}), y: d.getFullYear(), m: d.getMonth(), rev: 0, count: 0 });
+          }
+          incoming.filter(r => r.status === 'Rental Completed').forEach(r => {
+            const d = new Date(r.endDate || r.startDate || '');
+            const bucket = months.find(b => b.y === d.getFullYear() && b.m === d.getMonth());
+            if (bucket) { bucket.rev += Number(r.totalPrice || 0); bucket.count++; }
+          });
+          if (_rentRevenueChart) _rentRevenueChart.destroy();
+          _rentRevenueChart = new Chart(ctxL, {
+            type: 'line',
+            data: {
+              labels: months.map(b => b.label),
+              datasets: [{
+                label: 'รายได้ (฿)',
+                data: months.map(b => b.rev),
+                borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.1)',
+                borderWidth: 2.5, pointRadius: 5, pointBackgroundColor: '#3b82f6',
+                fill: true, tension: 0.4,
+              }, {
+                label: 'จำนวนรายการ',
+                data: months.map(b => b.count),
+                borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.08)',
+                borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#22c55e',
+                fill: false, tension: 0.4, yAxisID: 'y2',
+              }],
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              animation: { duration: 700 },
+              scales: {
+                y:  { beginAtZero:true, ticks:{ callback: v => '฿'+v.toLocaleString() }, grid:{ color:'rgba(0,0,0,.05)' } },
+                y2: { beginAtZero:true, position:'right', grid:{ display:false }, ticks:{ stepSize:1 } },
+                x:  { grid:{ color:'rgba(0,0,0,.04)' } },
+              },
+              plugins: { legend:{ position:'top', labels:{ font:{ size:11 }, boxWidth:12 } }, tooltip:{ mode:'index', intersect:false } },
+            },
+          });
+        }
+
+        // ── Bar Chart (rentals per device, top 8) ─────────────────
+        const ctxB = document.getElementById('rentBarChart');
+        if (ctxB && typeof Chart !== 'undefined') {
+          const deviceMap = {};
+          const allRequests = [...incoming, ...outgoing];
+          allRequests.forEach(r => {
+            const key = r.deviceName || r.deviceNo || 'ไม่ระบุ';
+            if (!deviceMap[key]) deviceMap[key] = { total:0, completed:0, active:0 };
+            deviceMap[key].total++;
+            if (r.status === 'Rental Completed') deviceMap[key].completed++;
+            if (r.status === 'Booking Confirmed' || r.status === 'Rental Active') deviceMap[key].active++;
+          });
+          const sorted = Object.entries(deviceMap).sort((a,b) => b[1].total - a[1].total).slice(0,8);
+          if (_rentBarChart) _rentBarChart.destroy();
+          _rentBarChart = new Chart(ctxB, {
+            type: 'bar',
+            data: {
+              labels: sorted.map(([k]) => k.length>14 ? k.slice(0,14)+'…' : k),
+              datasets: [
+                { label:'เสร็จสิ้น', data: sorted.map(([,v])=>v.completed), backgroundColor:'rgba(34,197,94,.75)',  borderRadius:6 },
+                { label:'กำลังเช่า', data: sorted.map(([,v])=>v.active),    backgroundColor:'rgba(59,130,246,.75)',  borderRadius:6 },
+                { label:'คำขอทั้งหมด', data: sorted.map(([,v])=>v.total),     backgroundColor:'rgba(148,163,184,.35)', borderRadius:6 },
+              ],
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              animation: { duration: 600 },
+              scales: {
+                x: { stacked:false, grid:{ display:false } },
+                y: { beginAtZero:true, ticks:{ stepSize:1 }, grid:{ color:'rgba(0,0,0,.05)' } },
+              },
+              plugins: { legend:{ position:'top', labels:{ font:{ size:11 }, boxWidth:12 } }, tooltip:{ mode:'index', intersect:false } },
+            },
+          });
+        }
+
+        // ── Alerts ─────────────────────────────────────────────────────────
+        const alertsEl = document.getElementById('rentAlerts');
+        if (alertsEl) {
+          const alerts = [];
+          // 1. Pending requests
+          if (pending > 0)
+            alerts.push({ cls:'alert-warn', icon:'⏳', msg: '<strong>' + pending + ' คำขอ</strong>รอการยืนยัน — ไปที่แทบ “แชทที่เข้ามา” เพื่อยืนยัน' });
+          // 2. Rentals ending within 3 days
+          const threeDays = 3 * 86400000;
+          const endingSoon = incoming.filter(r => {
+            if (r.status !== 'Rental Active' && r.status !== 'Booking Confirmed') return false;
+            const diff = new Date(r.endDate) - Date.now();
+            return diff >= 0 && diff <= threeDays;
+          });
+          if (endingSoon.length > 0)
+            alerts.push({ cls:'alert-info', icon:'📌', msg: '<strong>' + endingSoon.length + ' รายการ</strong>สัญญาเช่าหมดภายใน 3 วัน — เตรียมรับคืนอุปกรณ์' });
+          // 3. Overdue
+          const overdue = incoming.filter(r =>
+            (r.status === 'Rental Active' || r.status === 'Booking Confirmed') && new Date(r.endDate) < Date.now()
+          );
+          if (overdue.length > 0)
+            alerts.push({ cls:'alert-danger', icon:'🚨', msg: '<strong>' + overdue.length + ' รายการ</strong>เกินกำหนดคืนแล้ว — ติดต่อผู้เช่าด่วน' });
+          // 4. No devices
+          if (totalDevs === 0)
+            alerts.push({ cls:'alert-info', icon:'📦', msg: 'ยังไม่มีอุปกรณ์ — <strong>กด “⭐ เพิ่มอุปกรณ์”</strong> เพื่อเริ่มต้น' });
+          // 5. All ok
+          if (alerts.length === 0)
+            alerts.push({ cls:'alert-ok', icon:'✅', msg: 'ทุกอย่างเป็นปกติ — ไม่มีการแจ้งเตือน' });
+          alertsEl.innerHTML = alerts.map(a =>
+            '<div class="dash-alert ' + a.cls + '"><div class="dash-alert-icon">' + a.icon + '</div><div class="dash-alert-text">' + a.msg + '</div></div>'
+          ).join('');
+        }
+      } catch(e) { /* silent — dashboard is non-critical */ }
+    }
+
+    document.getElementById('dashRefreshBtn') && document.getElementById('dashRefreshBtn').addEventListener('click', loadRentDashboard);
 
     // Realtime status polling (every 10 seconds)
     setInterval(loadMyDevices, 10000);
@@ -716,6 +1069,7 @@
     // Load devices when page loads
     document.addEventListener('DOMContentLoaded', () => {
       loadMyDevices();
+      loadRentDashboard();
       // Pre-load badge count for unread chat notifications
       loadIncomingBadge();
       // Auto-open chats tab if URL param says so
@@ -763,6 +1117,31 @@
       } catch(e) { /* silent */ }
     }
 
+    // ── Chat Inbox dismissed storage ───────────────────────────────
+    const CR_DISMISSED_KEY = 'notelet_cr_dismissed';
+    function getCrDismissed() { try { return JSON.parse(localStorage.getItem(CR_DISMISSED_KEY) || '{}'); } catch { return {}; } }
+    function saveCrDismissed(d) { try { localStorage.setItem(CR_DISMISSED_KEY, JSON.stringify(d)); } catch {} }
+
+    function dismissChatRoom(e, roomName, deviceId) {
+      e.preventDefault(); e.stopPropagation();
+      const d = getCrDismissed();
+      d[String(deviceId)] = { at: Date.now(), room: roomName };
+      saveCrDismissed(d);
+      const wrap = document.querySelector(`.cr-card-wrap[data-device-id="${CSS.escape(String(deviceId))}"]`);
+      if (wrap) {
+        wrap.style.transition = 'opacity .22s';
+        wrap.style.opacity = '0';
+        setTimeout(() => {
+          wrap.remove();
+          const inbox = document.querySelector('.chat-inbox');
+          if (inbox && !inbox.querySelector('.cr-card-wrap')) {
+            document.getElementById('chatInboxContainer').innerHTML =
+              '<div class="req-empty"><div class="icon">💬</div><p>ยังไม่มีแชทเข้ามา</p></div>';
+          }
+        }, 240);
+      }
+    }
+
     // ── Chat Inbox ─────────────────────────────────────────────────
     async function loadChatRooms() {
       const token = localStorage.getItem('access_token');
@@ -774,7 +1153,29 @@
           headers: { 'Authorization': 'Bearer ' + token }
         });
         const result = await res.json();
-        const rooms = Array.isArray(result.data) ? result.data : [];
+        let rooms = Array.isArray(result.data) ? result.data : [];
+
+        // Dedup: one card per device — keep the one with the latest lastMessageAt
+        const byDevice = new Map();
+        rooms.forEach(r => {
+          const id = String(r.deviceId);
+          const existing = byDevice.get(id);
+          if (!existing || (r.lastMessageAt || '') > (existing.lastMessageAt || '')) {
+            byDevice.set(id, r);
+          }
+        });
+        rooms = [...byDevice.values()];
+
+        // Filter dismissed (skip if room has unread messages that arrived after dismiss)
+        const dismissed = getCrDismissed();
+        rooms = rooms.filter(r => {
+          const dis = dismissed[String(r.deviceId)];
+          if (!dis) return true;
+          // Re-show if there are unread messages newer than dismiss time
+          if ((r.unreadCount || 0) > 0 && r.lastMessageAt && new Date(r.lastMessageAt).getTime() > dis.at) return true;
+          return false;
+        });
+
         if (rooms.length === 0) {
           container.innerHTML = '<div class="req-empty"><div class="icon">💬</div><p>ยังไม่มีแชทเข้ามา</p></div>';
           return;
@@ -827,7 +1228,9 @@
         + '&deviceId=' + encodeURIComponent(room.deviceId)
         + (renterId ? '&renterId=' + encodeURIComponent(renterId) : '');
 
-      return '<a class="chat-room-item' + (isUnread ? ' unread' : '') + '" href="' + chatUrl + '">'
+      return '<div class="cr-card-wrap" data-device-id="' + escapeHtml(String(room.deviceId)) + '">'
+        + '<button class="cr-dismiss-btn" onclick="dismissChatRoom(event,\'' + escapeHtml(room.roomName) + '\',\'' + escapeHtml(String(room.deviceId)) + '\')" title="ปิด">×</button>'
+        + '<a class="chat-room-item' + (isUnread ? ' unread' : '') + '" href="' + chatUrl + '">'
         + '<div class="cr-img-wrap">'
         + imgHtml
         + (isUnread ? '<div class="cr-unread-pill">' + (unreadCount > 99 ? '99+' : unreadCount) + ' ใหม่</div>' : '')
@@ -845,7 +1248,8 @@
         + '</div>'
         + '</div>'
         + '<button class="cr-open-btn">💬 เปิดแชท</button>'
-        + '</a>';
+        + '</a>'
+        + '</div>';
     }
 
     function formatChatTime(date) {
@@ -869,7 +1273,7 @@
           headers: { 'Authorization': 'Bearer ' + token }
         });
         const result = await res.json();
-        const requests = Array.isArray(result.data) ? result.data : [];
+        const requests = (Array.isArray(result.data) ? result.data : []).filter(r => Number(r.totalPrice) > 0);
         grid.innerHTML = requests.length === 0
           ? '<div class="req-empty"><div class="icon">📋</div><p>ยังไม่มีคำขอเช่าที่เข้ามา</p></div>'
           : requests.map(r => renderRequestCard(r, 'incoming')).join('');
@@ -889,7 +1293,7 @@
           headers: { 'Authorization': 'Bearer ' + token }
         });
         const result = await res.json();
-        const requests = Array.isArray(result.data) ? result.data : [];
+        const requests = (Array.isArray(result.data) ? result.data : []).filter(r => Number(r.totalPrice) > 0);
         grid.innerHTML = requests.length === 0
           ? '<div class="req-empty"><div class="icon">📬</div><p>ยังไม่มีคำขอที่ส่งออกไป</p></div>'
           : requests.map(r => renderRequestCard(r, 'outgoing')).join('');
@@ -990,6 +1394,7 @@
           } else {
             loadMyDevices();
           }
+          loadRentDashboard();
         } else {
           alert('ไม่สำเร็จ: ' + (result.message || 'เกิดข้อผิดพลาด'));
         }
@@ -1055,15 +1460,66 @@
               <option value="Other">Other</option>
             </select>
           </div>
-          <div id="priceFieldWrap" style="display:none">
-            <label for="price">Price / Day</label>
-            <input id="price" name="price" type="number" min="0" step="0.01" placeholder="0.00">
+          <div id="priceFieldWrap">
+            <label for="price">Price / Day <span style="color:#e55">*</span></label>
+            <input id="price" name="price" type="number" min="0" step="0.01" placeholder="0.00" required>
           </div>
         </div>
 
         <div class="form-row">
           <label for="description">Description</label>
-          <textarea id="description" name="description" rows="4" placeholder="Optional notes"></textarea>
+          <textarea id="description" name="description" rows="3" placeholder="Optional notes"></textarea>
+        </div>
+
+        <div class="form-row form-row--split">
+          <div>
+            <label for="specCpu">CPU</label>
+            <input id="specCpu" name="cpu" type="text" list="cpuList" placeholder="e.g. i7-12700H">
+            <datalist id="cpuList">
+              <option value="M1">
+              <option value="M2">
+              <option value="M3">
+              <option value="i5-12500H">
+              <option value="i7-12700H">
+              <option value="i9-13900H">
+              <option value="Ryzen 5 7535HS">
+              <option value="Ryzen 7 7745HX">
+            </datalist>
+          </div>
+          <div>
+            <label for="specRam">RAM</label>
+            <select id="specRam" name="ram">
+              <option value="">-- เลือก RAM --</option>
+              <option value="8GB">8GB</option>
+              <option value="16GB">16GB</option>
+              <option value="32GB">32GB</option>
+              <option value="64GB">64GB</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row form-row--split">
+          <div>
+            <label>Storage</label>
+            <div style="display:flex;gap:8px;">
+              <select id="specStorageSize" name="storageSize" style="flex:1;">
+                <option value="">ขนาด</option>
+                <option value="256GB">256GB</option>
+                <option value="512GB">512GB</option>
+                <option value="1TB">1TB</option>
+                <option value="2TB">2TB</option>
+              </select>
+              <select id="specStorageType" name="storageType" style="flex:1;">
+                <option value="">ประเภท</option>
+                <option value="SSD">SSD</option>
+                <option value="HDD">HDD</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label for="specGpu">GPU <span style="color:#9ca3af;font-weight:400;font-size:11px;">(ไม่บังคับ)</span></label>
+            <input id="specGpu" name="gpu" type="text" placeholder="e.g. NVIDIA RTX 4060">
+          </div>
         </div>
 
         <div class="form-row">
@@ -1106,15 +1562,66 @@
               <option value="Other">Other</option>
             </select>
           </div>
-          <div id="editPriceFieldWrap" style="display:none">
-            <label for="editPrice">Price / Day</label>
+          <div id="editPriceFieldWrap">
+            <label for="editPrice">Price / Day <span style="color:#e55">*</span></label>
             <input id="editPrice" name="price" type="number" min="0" step="0.01" placeholder="0.00">
           </div>
         </div>
 
         <div class="form-row">
           <label for="editDescription">Description</label>
-          <textarea id="editDescription" name="description" rows="4" placeholder="Optional notes"></textarea>
+          <textarea id="editDescription" name="description" rows="3" placeholder="Optional notes"></textarea>
+        </div>
+
+        <div class="form-row form-row--split">
+          <div>
+            <label for="editSpecCpu">CPU</label>
+            <input id="editSpecCpu" name="cpu" type="text" list="editCpuList" placeholder="e.g. i7-12700H">
+            <datalist id="editCpuList">
+              <option value="M1">
+              <option value="M2">
+              <option value="M3">
+              <option value="i5-12500H">
+              <option value="i7-12700H">
+              <option value="i9-13900H">
+              <option value="Ryzen 5 7535HS">
+              <option value="Ryzen 7 7745HX">
+            </datalist>
+          </div>
+          <div>
+            <label for="editSpecRam">RAM</label>
+            <select id="editSpecRam" name="ram">
+              <option value="">-- เลือก RAM --</option>
+              <option value="8GB">8GB</option>
+              <option value="16GB">16GB</option>
+              <option value="32GB">32GB</option>
+              <option value="64GB">64GB</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row form-row--split">
+          <div>
+            <label>Storage</label>
+            <div style="display:flex;gap:8px;">
+              <select id="editSpecStorageSize" name="storageSize" style="flex:1;">
+                <option value="">ขนาด</option>
+                <option value="256GB">256GB</option>
+                <option value="512GB">512GB</option>
+                <option value="1TB">1TB</option>
+                <option value="2TB">2TB</option>
+              </select>
+              <select id="editSpecStorageType" name="storageType" style="flex:1;">
+                <option value="">ประเภท</option>
+                <option value="SSD">SSD</option>
+                <option value="HDD">HDD</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label for="editSpecGpu">GPU <span style="color:#9ca3af;font-weight:400;font-size:11px;">(ไม่บังคับ)</span></label>
+            <input id="editSpecGpu" name="gpu" type="text" placeholder="e.g. NVIDIA RTX 4060">
+          </div>
         </div>
 
         <div class="form-row">
@@ -1227,13 +1734,6 @@
   </div>
 
   <script>
-    // Show price fields only for non-admin users (elements now in DOM)
-    if (typeof _isAdmin !== 'undefined' && !_isAdmin) {
-      var _addWrap = document.getElementById('priceFieldWrap');
-      if (_addWrap) _addWrap.style.display = '';
-      var _editWrap = document.getElementById('editPriceFieldWrap');
-      if (_editWrap) _editWrap.style.display = '';
-    }
 
     // modal open/close
     const openBtn = document.getElementById('openAddRent');
@@ -1275,14 +1775,24 @@
       }
 
       // Collect fields
-      const deviceName = form.deviceName.value.trim();
-      const deviceType = form.deviceType.value;
-      const price = _isAdmin ? 0 : parseFloat(form.price.value);
-      const description = form.description.value.trim();
-      const imageFiles = form.images ? form.images.files : [];
+      const deviceName = (document.getElementById('deviceName')).value.trim();
+      const deviceType = (document.getElementById('deviceType')).value;
+      const price = parseFloat(document.getElementById('price').value) || 0;
+      const description = (document.getElementById('description')).value.trim();
+      const cpu = (document.getElementById('specCpu')).value.trim();
+      const ram = (document.getElementById('specRam')).value;
+      const storageSize = (document.getElementById('specStorageSize')).value;
+      const storageType = (document.getElementById('specStorageType')).value;
+      const storage = [storageSize, storageType].filter(Boolean).join(' ');
+      const gpu = (document.getElementById('specGpu')).value.trim();
+      const imageFiles = document.getElementById('imageUpload').files;
 
-      if (!deviceName || !deviceType || (!_isAdmin && !price)) {
+      if (!deviceName || !deviceType) {
         alert('Please fill in all required fields');
+        return;
+      }
+      if (price <= 0) {
+        alert('กรุณากรอกราคา/วัน (ต้องมากกว่า 0) สำหรับอุปกรณ์เช่า\nหากต้องการเพิ่มอุปกรณ์ยืมฟรี กรุณาไปที่หน้า "ยืมอุปกรณ์"');
         return;
       }
 
@@ -1315,6 +1825,10 @@
           type: deviceType,
           price: price,
           description: description,
+          cpu: cpu,
+          ram: ram,
+          storage: storage,
+          gpu: gpu,
           imageUrl: imageUrls.length > 0 ? JSON.stringify(imageUrls) : ''
         };
 

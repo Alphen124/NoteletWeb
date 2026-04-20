@@ -425,7 +425,8 @@
       <nav class="nav">
         <a href="/" class="active">หน้าแรก</a>
         <a href="/features/devices/devices.html">ค้นหาอุปกรณ์</a>
-        <a href="/features/devices/rentout.html">จัดการอุปกรณ์</a>
+        <a href="/features/devices/rentout.html">จัดการอุปกรณ์เช่า</a>
+        <a href="/features/management/giveout.html">ยืมอุปกรณ์</a>
         <a href="#about">เกี่ยวกับ</a>
       </nav>
 
@@ -713,6 +714,10 @@
             : '';
           ha.innerHTML = `${adminBtn}<span style="color:#fff;font-size:14px;margin-right:8px;">👤 ${name}</span>
             <button onclick="doLogout()" style="background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.25);border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;">ออกจากระบบ</button>`;
+          if (u.is_authorized_lender || u.is_admin) {
+            const navLb = document.getElementById('navLenderBtn');
+            if (navLb) navLb.style.display = '';
+          }
         } catch(e) {}
       }
 
@@ -764,7 +769,7 @@
         const devices = (Array.isArray(raw) ? raw : (raw?.data || [])).slice(0, 8);
         if (!devices.length) { grid.innerHTML = '<div class="feat-empty">📦 ยังไม่มีอุปกรณ์ในระบบ</div>'; return; }
         grid.innerHTML = devices.map(d => {
-          const isAdmin = d.isAdminDevice === true;
+          const isAdmin = Number(d.price) === 0;
           const imgUrl = parseImg(d.imageUrl || d.image_url || '');
           const price = isAdmin ? '<span style="color:#0a5ba8;font-size:13px;font-weight:700;">📚 ยืมจากคณะ (ฟรี)</span>' : (d.price != null ? `${Number(d.price).toFixed(0)} บาท<span>/วัน</span>` : 'ฟรี');
           const st = (d.status || '').toLowerCase();
@@ -781,7 +786,7 @@
               <div class="feat-name" style="${isAdmin ? 'color:#0a3d7a;' : ''}">${escH(d.name || 'อุปกรณ์')}</div>
               <div class="feat-price">${price}</div>
               <div class="feat-stars" id="star-feat-${d.deviceNo || d.id || ''}">${isAdmin ? '' : renderFeatStars(d.rating||0)}</div>
-              <button class="feat-btn" style="${isAdmin ? 'background:#4F9CF9;' : ''}" onclick="goDevice('${escH(String(d.deviceNo || d.id || ''))}')">
+              <button class="feat-btn" style="${isAdmin ? 'background:#4F9CF9;' : ''}" onclick="goDevice('${escH(String(d.deviceNo || d.id || ''))}', ${isAdmin})">
                 ${isAdmin ? '📚 ยืมจากคณะ' : '🛒 ดูรายละเอียด'}
               </button>
             </div>
@@ -792,7 +797,8 @@
       }
     }
 
-    function goDevice(id) {
+    function goDevice(id, isBorrow) {
+      if (isBorrow) { window.location.href = '/features/management/giveout.html'; return; }
       window.location.href = '/features/devices/rentdevice.html?id=' + encodeURIComponent(id);
     }
 

@@ -137,8 +137,9 @@
       </a>
       <nav class="nav">
         <a href="/features/devices/devices.html" class="active">ค้นหาอุปกรณ์</a>
-        <a href="/features/devices/rentout.html">จัดการอุปกรณ์</a>
-        <a href="/features/devices/devicehistory.html">ประวัติการยืม</a>
+        <a href="/features/devices/rentout.html">จัดการอุปกรณ์เช่า</a>
+        <a href="/features/devices/devicehistory.html">ประวัติการเช่า</a>
+        <a href="/features/management/giveout.html">ยืมอุปกรณ์</a>
       </nav>
       <div class="header-actions" id="headerActions">
         <a href="/features/auth/login.html" class="btn-login">Login</a>
@@ -210,6 +211,7 @@
 
             <div class="booking-actions">
               <button id="addCartBtn" class="btn-book">&#x1F4E8; ส่งคำขอเช่า</button>
+              <button id="directChatBtn" title="ติดต่อเจ้าของโดยตรง" style="padding:13px 16px;background:#f1f5ff;color:#2563eb;border:1.5px solid #c7d7ff;border-radius:12px;font-size:20px;cursor:pointer;transition:background .2s;flex-shrink:0;" onclick="openDirectChat()">💬</button>
             </div>
             <div class="booking-meta-row">
               <span id="remaining" class="meta-small">กำลังโหลด&#x2026;</span>
@@ -313,6 +315,7 @@
 
         // Brand / type
         document.getElementById('brandName').textContent = d.type || 'Device';
+        window._deviceType = d.type || '';
 
         // Price
         document.getElementById('devicePrice').textContent =
@@ -376,20 +379,18 @@
         // Store price per day for cart calculation
         window._pricePerDay = parseFloat(d.price) || 0;
 
-        // Store owner's userId for review loading
+        // Store owner's userId and name for review loading and direct chat
         window._ownerUserId = d.ownerUserId || 0;
+        window._ownerName   = d.ownerName   || d.ownerEmail || 'เจ้าของ';
 
-        // Hide like/dislike actions on admin-created devices
-        if (d.isAdminDevice) {
+        // Hide like/dislike actions on admin-created devices (price === 0 = borrow device)
+        if (Number(d.price) === 0) {
           document.querySelectorAll('.like, .dislike, .review-actions').forEach(function(el) {
             el.style.display = 'none';
           });
-          // Update price display and button for faculty borrow
-          document.getElementById('devicePrice').textContent = '📚 ยืมจากคณะ (ฟรี)';
-          window._pricePerDay = 0;
-          window._isAdminDevice = true;
-          const cartBtn = document.getElementById('addCartBtn');
-          if (cartBtn) cartBtn.textContent = '📚 ส่งคำขอยืม';
+          // Redirect to giveout page for borrow devices
+          window.location.href = '/features/management/giveout.html';
+          return;
         }
 
       } catch (err) {
@@ -662,6 +663,27 @@
     function repositionPopups(){ try{ const cp=document.getElementById('miniCartPopup'); if(cp&&!cp.classList.contains('hidden')) showMiniCartAtAnchor(true); }catch(e){} }
     window.addEventListener('scroll',repositionPopups); window.addEventListener('resize',repositionPopups);
 
+    // ─── Open Direct Chat (1-on-1, no proposal) ──────────────────────────────
+    function openDirectChat() {
+      const dName = document.getElementById('deviceName')?.textContent || deviceName || '';
+      const oName = window._ownerName || 'เจ้าของ';
+      const ppd   = window._pricePerDay || 0;
+      let   img   = '';
+      try {
+        const bg = document.getElementById('mainImage')?.style?.backgroundImage || '';
+        img = bg.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
+      } catch (_) {}
+      const p = new URLSearchParams({
+        deviceId:    id || '',
+        deviceName:  dName,
+        ownerName:   oName,
+        pricePerDay: ppd,
+        deviceType:  (window._deviceType || ''),
+        deviceImg:   img,
+      });
+      window.location.href = '/features/chat/direct-chat.html?' + p.toString();
+    }
+
     // ─── Chat popup helpers ────────────────────────────────────────────────
     const API_BASE = '';
     let _chatRoomName = null;
@@ -707,14 +729,6 @@
         return;
       }
 
-      // Block admin users from borrowing/renting
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-        if (payload.is_admin) {
-          alert('🛡️ บัญชี Admin ไม่สามารถยืม/เช่าอุปกรณ์ได้');
-          return;
-        }
-      } catch(_) {}
       const start = startDateEl.value;
       const end   = endDateEl.value;
       if (!start)              { alert('กรุณาเลือกวันเริ่มต้น'); return; }
