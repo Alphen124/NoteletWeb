@@ -1,0 +1,317 @@
+﻿<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Notelet — จัดการผู้ใช้ (Admin)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/config.js"></script>
+  <script src="/js/auth.js"></script>
+  <style>
+    :root { --blue:#043873; --accent:#FFE492; --primary:#4F9CF9; }
+    body { background: #f4f6fa; font-family: 'Inter', sans-serif; }
+    .admin-header { background: var(--blue); color: #fff; padding: 0; box-shadow: 0 2px 8px rgba(2,10,22,0.15); position: sticky; top: 0; z-index: 50; }
+    .admin-header-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 72px; display: flex; align-items: center; justify-content: space-between; }
+    .admin-brand { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+    .admin-logo-mark { width: 46px; height: 46px; background-image: url('/logo.png'); background-size: cover; background-position: center; border-radius: 10px; }
+    .admin-logo-text { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: .6px; }
+    .admin-badge { background: var(--accent); color: var(--blue); font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: .6px; }
+    .admin-user-info { display: flex; align-items: center; gap: 14px; }
+    .admin-email { font-size: 13px; color: rgba(255,255,255,.75); }
+    .btn-logout { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s; }
+    .btn-logout:hover { background: rgba(255,255,255,.2); }
+    .admin-nav { background: #032d5c; border-top: 1px solid rgba(255,255,255,.08); }
+    .admin-nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; gap: 0; }
+    .admin-nav a { color: rgba(255,255,255,.65); text-decoration: none; padding: 13px 20px; font-size: 14px; font-weight: 500; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s; white-space: nowrap; }
+    .admin-nav a:hover { color: #fff; border-bottom-color: var(--primary); }
+    .admin-nav a.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+    .admin-content { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+    .page-title { font-size: 26px; font-weight: 800; color: #0d1b2e; margin: 0 0 4px; }
+    .page-sub { color: #6b7a99; font-size: 14px; margin: 0 0 24px; }
+    .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+    .search-box { flex: 1; min-width: 200px; padding: 10px 16px; border: 1.5px solid #dbe4f5; border-radius: 10px; font-size: 14px; outline: none; transition: border-color .15s; background: #fff; }
+    .search-box:focus { border-color: var(--primary); }
+    .filter-select { padding: 10px 14px; border: 1.5px solid #dbe4f5; border-radius: 10px; font-size: 14px; outline: none; background: #fff; cursor: pointer; }
+    .users-table-wrap { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(4,56,115,0.08); overflow: hidden; border: 1.5px solid #e4edfc; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #f0f6ff; padding: 14px 16px; text-align: left; font-size: 12px; font-weight: 700; color: #4a6fa8; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1.5px solid #dbe4f5; }
+    tbody tr { border-bottom: 1px solid #f0f6ff; transition: background .1s; }
+    tbody tr:hover { background: #f5f9ff; }
+    tbody td { padding: 12px 16px; font-size: 14px; color: #1e293b; vertical-align: middle; }
+    .email { color: var(--primary); font-weight: 500; }
+    .role-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+    .chip { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: .3px; }
+    .chip-admin  { background: #fff3cd; color: #7c4700; border: 1px solid #FFE492; }
+    .chip-staff  { background: #d1fae5; color: #065f46; }
+    .chip-user   { background: #e0edff; color: #043873; }
+    .chip-inactive { background: #fee2e2; color: #991b1b; }
+    .btn-sm { padding: 6px 12px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; transition: opacity .15s, transform .1s; white-space: nowrap; }
+    .btn-sm:hover { opacity: .85; transform: translateY(-1px); }
+    .btn-promote    { background: var(--primary); color: #fff; }
+    .btn-demote     { background: #6b7280; color: #fff; }
+    .btn-mkadmin    { background: var(--blue); color: var(--accent); }
+    .btn-rmadmin    { background: #92400e; color: #fff; }
+    .btn-deactivate { background: #ef4444; color: #fff; }
+    .btn-activate   { background: #10b981; color: #fff; }
+    .btn-edit       { background: #f59e0b; color: #fff; }
+    .actions-cell { display: flex; gap: 5px; flex-wrap: wrap; }
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(4,56,115,0.45); z-index: 8000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.hidden { display: none; }
+    .modal-box { background: #fff; border-radius: 20px; padding: 36px; width: 100%; max-width: 420px; box-shadow: 0 24px 48px rgba(4,56,115,0.18); }
+    .modal-title { font-size: 18px; font-weight: 800; color: #0d1b2e; margin: 0 0 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    .form-group input { width: 100%; padding: 10px 14px; border: 1.5px solid #dbe4f5; border-radius: 10px; font-size: 14px; outline: none; font-family: inherit; transition: border-color .15s; box-sizing: border-box; }
+    .form-group input:focus { border-color: var(--primary); }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+    .btn-primary   { background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .2s; }
+    .btn-primary:hover { background: #032d5c; }
+    .btn-secondary { background: #f0f6ff; color: #043873; border: none; border-radius: 10px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    #loadingOverlay { position: fixed; inset: 0; background: rgba(255,255,255,.92); display: flex; align-items: center; justify-content: center; z-index: 9999; font-size: 16px; color: #6b7a99; }
+    .loading-dot { animation: blink 1.2s infinite; }
+    @keyframes blink { 0%,100%{opacity:.3} 50%{opacity:1} }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--blue); color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 9999; opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+<div id="loadingOverlay"><span class="loading-dot">กำลังโหลด...</span></div>
+<div class="toast" id="toast"></div>
+
+<!-- Edit user modal -->
+<div class="modal-overlay hidden" id="editUserModal">
+  <div class="modal-box">
+    <h2 class="modal-title">✏️ แก้ไขข้อมูลผู้ใช้</h2>
+    <input type="hidden" id="editUserId">
+    <div class="form-group"><label>ชื่อจริง (First Name)</label><input type="text" id="editFName" placeholder="ชื่อจริง"></div>
+    <div class="form-group"><label>นามสกุล (Last Name)</label><input type="text" id="editLName" placeholder="นามสกุล"></div>
+    <div class="form-group"><label>เบอร์โทร</label><input type="text" id="editTel" placeholder="0812345678"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeEditUser()">ยกเลิก</button>
+      <button class="btn-primary"   onclick="saveEditUser()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<header class="admin-header">
+  <div class="admin-header-inner">
+    <a class="admin-brand" href="/features/management/admin-dashboard.html">
+      <div class="admin-logo-mark"></div>
+      <span class="admin-logo-text">NOTELET</span>
+      <span class="admin-badge">ADMIN</span>
+    </a>
+    <div class="admin-user-info">
+      <span class="admin-email" id="adminEmail">—</span>
+      <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
+    </div>
+  </div>
+</header>
+<nav class="admin-nav">
+  <div class="admin-nav-inner">
+    <a href="/features/management/admin-dashboard.html">📊 ภาพรวม</a>
+    <a href="/features/management/admin-users.html" class="active">👥 จัดการผู้ใช้</a>
+    <a href="/features/management/admin-devices.html">🖥️ จัดการอุปกรณ์</a>
+    <a href="/features/management/admin-rentals.html">📋 คำขอเช่า</a>
+    <a href="/index.html">← กลับหน้าหลัก</a>
+  </div>
+</nav>
+<main class="admin-content">
+  <h1 class="page-title">จัดการผู้ใช้</h1>
+  <p class="page-sub">ให้สิทธิ์ Staff / Admin และจัดการสถานะบัญชีผู้ใช้ทั้งหมด</p>
+  <div class="toolbar">
+    <input type="text" class="search-box" id="searchInput" placeholder="ค้นหาอีเมล หรือชื่อ..." oninput="renderTable()">
+    <select class="filter-select" id="roleFilter" onchange="renderTable()">
+      <option value="">ทุก Role</option>
+      <option value="admin">Admin</option>
+      <option value="staff">Staff</option>
+      <option value="user">User</option>
+      <option value="inactive">Inactive</option>
+    </select>
+  </div>
+  <div class="users-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>อีเมล</th><th>ชื่อ / โทร</th><th>Role</th><th>วันที่สมัคร</th><th>การดำเนินการ</th>
+        </tr>
+      </thead>
+      <tbody id="usersBody">
+        <tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">กำลังโหลด...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<script>
+let allUsers = [];
+let currentAdminId = null;
+
+(async function init() {
+  if (!isAuthenticated()) { window.location.href = '/features/auth/login.html'; return; }
+  const user = getUserData();
+  if (!user?.is_admin) { alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้'); window.location.href = '/index.html'; return; }
+  document.getElementById('adminEmail').textContent = user.email || '—';
+  currentAdminId = user.user_id ?? user.userId ?? null;
+  document.getElementById('loadingOverlay').style.display = 'none';
+  await loadUsers();
+})();
+
+async function loadUsers() {
+  try {
+    const res = await apiRequest('/api/admin/users');
+    allUsers = res.data ?? [];
+    renderTable();
+  } catch {
+    document.getElementById('usersBody').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:40px;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+  }
+}
+
+function renderTable() {
+  const q      = document.getElementById('searchInput').value.toLowerCase();
+  const filter = document.getElementById('roleFilter').value;
+
+  const filtered = allUsers.filter(u => {
+    const name    = `${u.fname} ${u.lname}`.toLowerCase();
+    const matchQ  = !q || u.email.toLowerCase().includes(q) || name.includes(q);
+    const matchF  =
+      !filter ||
+      (filter === 'admin'    && u.is_admin) ||
+      (filter === 'staff'    && u.is_central_staff) ||
+      (filter === 'user'     && !u.is_admin && !u.is_central_staff && u.is_active) ||
+      (filter === 'inactive' && !u.is_active);
+    return matchQ && matchF;
+  });
+
+  if (!filtered.length) {
+    document.getElementById('usersBody').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;padding:32px;color:#94a3b8;">ไม่พบผู้ใช้</td></tr>';
+    return;
+  }
+
+  document.getElementById('usersBody').innerHTML = filtered.map(u => {
+    const chips = [];
+    if (u.is_admin)           chips.push('<span class="chip chip-admin">Admin</span>');
+    if (u.is_central_staff)   chips.push('<span class="chip chip-staff">Staff</span>');
+    if (!u.is_admin && !u.is_central_staff) chips.push('<span class="chip chip-user">User</span>');
+    if (!u.is_active)         chips.push('<span class="chip chip-inactive">Inactive</span>');
+
+    const isSelf = u.user_id === currentAdminId;
+    const actions = [];
+
+    // Staff toggle (only for non-admins)
+    if (!u.is_admin) {
+      if (!u.is_central_staff)
+        actions.push(`<button class="btn-sm btn-promote" onclick="setStaff(${u.user_id},true)">+Staff</button>`);
+      else
+        actions.push(`<button class="btn-sm btn-demote"  onclick="setStaff(${u.user_id},false)">-Staff</button>`);
+    }
+
+    // Admin toggle (cannot change self)
+    if (!isSelf) {
+      if (!u.is_admin)
+        actions.push(`<button class="btn-sm btn-mkadmin" onclick="setAdmin(${u.user_id},true)">+Admin</button>`);
+      else
+        actions.push(`<button class="btn-sm btn-rmadmin" onclick="setAdmin(${u.user_id},false)">-Admin</button>`);
+    }
+
+    // Active toggle (cannot change self)
+    if (!isSelf) {
+      if (u.is_active)
+        actions.push(`<button class="btn-sm btn-deactivate" onclick="setActive(${u.user_id},false)">ปิดบัญชี</button>`);
+      else
+        actions.push(`<button class="btn-sm btn-activate" onclick="setActive(${u.user_id},true)">เปิดบัญชี</button>`);
+    }
+
+    // Edit profile
+    actions.push(`<button class="btn-sm btn-edit" onclick="openEditUser(${u.user_id},'${escJs(u.fname)}','${escJs(u.lname)}','${escJs(u.tel)}')">แก้ไข</button>`);
+
+    return `<tr>
+      <td style="color:#6b7a99">${u.user_id}</td>
+      <td><span class="email">${escHtml(u.email)}</span></td>
+      <td>${escHtml(u.fname)} ${escHtml(u.lname)}<br><small style="color:#94a3b8">${escHtml(u.tel)}</small></td>
+      <td><div class="role-chips">${chips.join('')}</div></td>
+      <td style="color:#6b7a99;font-size:13px">${u.created_at ?? '—'}</td>
+      <td><div class="actions-cell">${actions.join('')}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+async function setStaff(userId, isStaff) {
+  if (!confirm(`ยืนยัน${isStaff ? 'เพิ่มสิทธิ์ Staff' : 'ถอดสิทธิ์ Staff'}?`)) return;
+  try {
+    await apiRequest(`/api/admin/users/${userId}/set-staff`, {
+      method: 'PATCH', body: JSON.stringify({ is_staff: isStaff })
+    });
+    showToast(isStaff ? 'ให้สิทธิ์ Staff สำเร็จ' : 'ถอดสิทธิ์ Staff สำเร็จ');
+    await loadUsers();
+  } catch { showToast('เกิดข้อผิดพลาด', true); }
+}
+
+async function setAdmin(userId, isAdmin) {
+  const label = isAdmin ? 'เพิ่มสิทธิ์ Admin' : 'ถอดสิทธิ์ Admin';
+  if (!confirm(`⚠️ ยืนยัน${label}?\nผู้ใช้จะสามารถเข้าถึงทุกส่วนของระบบได้`)) return;
+  try {
+    await apiRequest(`/api/admin/users/${userId}/set-admin`, {
+      method: 'PATCH', body: JSON.stringify({ is_admin: isAdmin })
+    });
+    showToast(isAdmin ? 'ให้สิทธิ์ Admin สำเร็จ' : 'ถอดสิทธิ์ Admin สำเร็จ');
+    await loadUsers();
+  } catch { showToast('เกิดข้อผิดพลาด', true); }
+}
+
+async function setActive(userId, isActive) {
+  if (!confirm(`ยืนยัน${isActive ? 'เปิดบัญชี' : 'ปิดบัญชี'}?`)) return;
+  try {
+    await apiRequest(`/api/admin/users/${userId}/set-active`, {
+      method: 'PATCH', body: JSON.stringify({ is_active: isActive })
+    });
+    showToast(isActive ? 'เปิดบัญชีสำเร็จ' : 'ปิดบัญชีสำเร็จ');
+    await loadUsers();
+  } catch { showToast('เกิดข้อผิดพลาด', true); }
+}
+
+function openEditUser(userId, fname, lname, tel) {
+  document.getElementById('editUserId').value  = userId;
+  document.getElementById('editFName').value   = fname;
+  document.getElementById('editLName').value   = lname;
+  document.getElementById('editTel').value     = tel;
+  document.getElementById('editUserModal').classList.remove('hidden');
+}
+function closeEditUser() { document.getElementById('editUserModal').classList.add('hidden'); }
+
+async function saveEditUser() {
+  const userId = document.getElementById('editUserId').value;
+  const body = {
+    fname: document.getElementById('editFName').value.trim(),
+    lname: document.getElementById('editLName').value.trim(),
+    tel:   document.getElementById('editTel').value.trim(),
+  };
+  try {
+    await apiRequest(`/api/admin/users/${userId}`, {
+      method: 'PUT', body: JSON.stringify(body)
+    });
+    showToast('บันทึกข้อมูลผู้ใช้สำเร็จ');
+    closeEditUser();
+    await loadUsers();
+  } catch (e) { showToast('เกิดข้อผิดพลาด: ' + (e.message ?? ''), true); }
+}
+
+function showToast(msg, isErr = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isErr ? '#ef4444' : '#043873';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function escHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escJs(s)   { return String(s ?? '').replace(/'/g,"\\'").replace(/\n/g,''); }
+function logout()   { clearAuthData(); window.location.href = '/features/auth/login.html'; }
+
+document.getElementById('editUserModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditUser();
+});
+</script>
+</body>
+</html>

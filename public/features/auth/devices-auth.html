@@ -9,6 +9,51 @@
   <script src="/js/config.js"></script>
   <script src="/js/auth.js"></script>
   <style>
+    /* RECOMMENDATION SECTION */
+    .rec-section {
+      background: #fff;
+      border-bottom: 1px solid #e8ecf4;
+      padding: 28px 0 20px;
+    }
+    .rec-section h2 {
+      font-size: 18px; font-weight: 700; color: #1e2d4a;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .rec-grid {
+      display: flex; gap: 16px; overflow-x: auto;
+      padding-bottom: 8px; scrollbar-width: thin;
+    }
+    .rec-grid::-webkit-scrollbar { height: 4px; }
+    .rec-grid::-webkit-scrollbar-thumb { background: #dde3ec; border-radius: 4px; }
+    .rec-card {
+      min-width: 180px; max-width: 180px; background: #f4f6fa;
+      border-radius: 12px; overflow: hidden;
+      border: 1.5px solid #e8ecf4; flex-shrink: 0;
+      cursor: pointer; transition: transform .2s, box-shadow .2s;
+      text-decoration: none; color: inherit;
+    }
+    .rec-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(4,56,115,0.12); }
+    .rec-card-img {
+      width: 100%; aspect-ratio: 4/3; background: #C4DEFD;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; font-size: 36px;
+    }
+    .rec-card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .rec-card-body { padding: 10px 12px; }
+    .rec-card-type { font-size: 10px; font-weight: 600; color: #7b8ab8; text-transform: uppercase; margin-bottom: 2px; }
+    .rec-card-name { font-size: 13px; font-weight: 700; color: #1e2d4a; line-height: 1.3; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rec-card-price { font-size: 13px; font-weight: 700; color: #043873; }
+    .rec-empty-msg { color: #aaa; font-size: 14px; padding: 8px 0; }
+    .rec-skeleton {
+      min-width: 180px; max-width: 180px; height: 160px;
+      background: linear-gradient(90deg, #e8ecf4 25%, #f4f6fa 50%, #e8ecf4 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.4s infinite;
+      border-radius: 12px; flex-shrink: 0;
+    }
+    @keyframes skeleton-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
     /* PAGE HEADER BANNER */
     .devices-banner {
       background: #111;
@@ -244,6 +289,20 @@
     </div>
   </div>
 
+  <!-- RECOMMENDATIONS -->
+  <section class="rec-section" id="recSection" style="display:none">
+    <div class="container">
+      <h2>✨ แนะนำสำหรับคุณ</h2>
+      <div class="rec-grid" id="recGrid">
+        <!-- Skeleton placeholders while loading -->
+        <div class="rec-skeleton"></div>
+        <div class="rec-skeleton"></div>
+        <div class="rec-skeleton"></div>
+        <div class="rec-skeleton"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- DEVICES -->
   <section class="devices-section">
     <div class="container">
@@ -287,6 +346,9 @@
       }
 
       await loadDevices();
+
+      // Log view events for visible devices after loading
+      logViewEvents();
 
       // filter / search events
       document.querySelectorAll('.filter-tab').forEach(btn => {
@@ -466,7 +528,18 @@
     }
 
     function goDevice(id) {
+      logEvent(id, 'click');
       window.location.href = '/features/devices/rentdevice.html?id=' + encodeURIComponent(id);
+    }
+
+    function logViewEvents() {
+      // Log a 'view' event for each device currently visible on the page (first page)
+      const filtered = getFiltered();
+      const page = filtered.slice(0, PAGE_SIZE);
+      page.forEach(d => {
+        const id = d.deviceNo || d.id;
+        if (id) logEvent(id, 'view');
+      });
     }
 
     function renderPagination(total) {
@@ -515,6 +588,60 @@
     }
     refreshRatings();
     setInterval(refreshRatings, 30000);
+
+    /* ── Event logging ───────────────────────────────────────── */
+    async function logEvent(deviceNo, eventType) {
+      try {
+        const token = localStorage.getItem('access_token');
+        await fetch('/api/devices/events', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ deviceNo: Number(deviceNo), eventType })
+        });
+      } catch(e) {}
+    }
+
+    /* ── Recommendations ─────────────────────────────────────── */
+    async function loadRecommendations() {
+      try {
+        const token = localStorage.getItem('access_token');
+        const res = await fetch('/api/recommendations', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const recs = Array.isArray(json.data) ? json.data : [];
+        const grid = document.getElementById('recGrid');
+        const section = document.getElementById('recSection');
+        if (recs.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
+        section.style.display = '';
+        grid.innerHTML = recs.map(d => {
+          const imgUrl = parseImgUrl(d.imageUrl || '');
+          const price  = Number(d.price) === 0 ? 'ฟรี' : `${Number(d.price).toFixed(2)} บาท/วัน`;
+          return `
+            <a class="rec-card" href="/features/devices/rentdevice.html?id=${encodeURIComponent(d.deviceNo)}"
+               onclick="logEvent(${d.deviceNo},'click')" aria-label="${d.name}">
+              <div class="rec-card-img">
+                ${imgUrl
+                  ? `<img src="${imgUrl}" alt="${d.name}" loading="lazy" onerror="this.style.display='none'">`
+                  : '💻'}
+              </div>
+              <div class="rec-card-body">
+                ${d.type ? `<div class="rec-card-type">${d.type}</div>` : ''}
+                <div class="rec-card-name">${d.name}</div>
+                <div class="rec-card-price">${price}</div>
+              </div>
+            </a>`;
+        }).join('');
+      } catch(e) {}
+    }
+    loadRecommendations();
   </script>
   
 </body>

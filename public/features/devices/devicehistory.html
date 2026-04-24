@@ -46,6 +46,128 @@
       border-radius:8px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer; transition:opacity .18s;
     }
     .btn-user-review-req:hover { opacity:.85; }
+
+    /* ── Enhanced History Card ──────────────────────────────────── */
+    .rentout-card { transition: transform .2s ease, box-shadow .2s ease; }
+    .rentout-card:hover { transform: translateY(-4px); box-shadow: 0 40px 100px rgba(11,35,70,0.14); }
+    .hc-top  { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
+    .hc-info { display:flex; flex-direction:column; gap:5px; margin-top:4px; }
+    .hc-row  { display:flex; align-items:center; gap:8px; font-size:13px; color:#4b5563; }
+    .hc-ico  { flex-shrink:0; width:18px; text-align:center; font-size:14px; }
+    .hc-price{ font-weight:700; color:var(--primary,#2563eb); font-size:14px; }
+    .hc-avatar { width:40px; height:40px; min-width:40px; border-radius:50%; background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:#fff; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:700; }
+
+    /* ── User Review Modal redesign ─────────────────────────────── */
+    #userReviewOverlay .review-modal {
+      max-width: 520px;
+      padding: 28px 28px 24px;
+      border-radius: 16px;
+    }
+    #userReviewOverlay .review-modal h3 {
+      font-size: 17px; font-weight: 700; margin: 0 0 16px; color: #111;
+    }
+    #userReviewOverlay .review-body { gap: 0; }
+    /* Reviewer info strip */
+    #userReviewOverlay .review-lessee.header {
+      background: #f8faff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    #userReviewOverlay .review-avatar {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg,#93c5fd,#3b82f6);
+      border-radius: 50%;
+    }
+    #userReviewOverlay .review-lessee-name { font-size: 15px; font-weight: 700; color: #1e293b; }
+    /* Scrollable write area */
+    .ur-write-scroll {
+      max-height: 58vh;
+      overflow-y: auto;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    /* Section card */
+    .sub-rating-section {
+      background: #f8faff;
+      border: 1px solid #e2eaf8;
+      border-radius: 12px;
+      padding: 12px 14px 8px;
+      margin-bottom: 10px;
+    }
+    .sub-rating-section-title {
+      font-size: 13px; font-weight: 700; color: #2563eb;
+      letter-spacing: .3px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    /* Each row: label left, stars right */
+    .sub-rating-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #eef2fb;
+    }
+    .sub-rating-row:last-child { border-bottom: none; }
+    .sub-rating-label {
+      font-size: 13px; color: #374151; font-weight: 500;
+      flex-shrink: 0; min-width: 110px;
+    }
+    .sub-rating-label .req { color: #ef4444; }
+    /* Overall big stars (inline with label row) */
+    .sub-rating-row .review-stars {
+      font-size: 20px !important;
+      gap: 2px !important;
+    }
+    .sub-rating-row .review-stars .star {
+      font-size: 20px;
+      padding: 0;
+      line-height: 1;
+      transition: transform .1s, color .1s;
+    }
+    .sub-rating-row .review-stars .star:hover { transform: scale(1.25); color: #f59e0b; }
+    .sub-rating-row .review-stars .star.active { color: #f59e0b; }
+    /* Sub (optional) stars — small, no border */
+    .sub-stars {
+      display: flex;
+      gap: 2px;
+    }
+    .sub-star {
+      background: none !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      color: #d1d5db;
+      transition: color .1s, transform .1s;
+    }
+    .sub-star:hover,
+    .sub-star:hover ~ .sub-star { color: #fbbf24; }
+    .sub-stars:hover .sub-star { color: #fbbf24; }
+    .sub-stars .sub-star:hover ~ .sub-star { color: #d1d5db; }
+    .sub-star.active { color: #f59e0b; }
+    /* Textarea */
+    #userReviewOverlay .review-label {
+      font-size: 13px; font-weight: 600; color: #374151;
+      margin: 4px 0 5px;
+    }
+    #userReviewOverlay textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid #e2eaf8; border-radius: 8px;
+      font-size: 13px; color: #374151; resize: vertical;
+      min-height: 68px; box-sizing: border-box;
+      background: #fafcff;
+      transition: border-color .15s;
+    }
+    #userReviewOverlay textarea:focus { outline: none; border-color: #93c5fd; background: #fff; }
+    /* Action bar */
+    #userReviewOverlay .modal-actions {
+      margin-top: 16px; display: flex; gap: 10px; justify-content: flex-end;
+    }
   </style>
 </head>
 <body>
@@ -321,16 +443,16 @@
         el.innerHTML = `
           <div class="card-media-large" aria-hidden></div>
           <div class="card-content">
-            <h3 class="device-name">${esc(item.deviceName || '')}</h3>
-            <div class="meta small">สถานะ · ${statusBadge(item.status)}</div>
-            ${item.startDate ? `<div class="meta small">วันเริ่ม · ${esc(fmtDate(item.startDate))}</div>` : ''}
-            ${item.endDate   ? `<div class="meta small">วันสิ้นสุด · ${esc(fmtDate(item.endDate))}</div>` : ''}
-            ${item.pickupTime ? `<div class="meta small">เวลารับ · ${esc(item.pickupTime)}</div>` : ''}
-            ${item.returnTime ? `<div class="meta small">เวลาคืน · ${esc(item.returnTime)}</div>` : ''}
-            ${totalText ? `<div class="meta small">ราคารวม · ${esc(totalText)}</div>` : ''}
+            <div class="hc-top">${statusBadge(item.status)}</div>
+            <h3 class="device-name" style="margin:0">${esc(item.deviceName || '')}</h3>
+            <div class="hc-info">
+              ${(item.startDate || item.endDate) ? `<div class="hc-row"><span class="hc-ico">📅</span><span>${item.startDate ? esc(fmtDate(item.startDate)) : ''}${item.startDate && item.endDate ? ' → ' : ''}${item.endDate ? esc(fmtDate(item.endDate)) : ''}</span></div>` : ''}
+              ${(item.pickupTime || item.returnTime) ? `<div class="hc-row"><span class="hc-ico">🕐</span><span>${item.pickupTime ? esc(item.pickupTime) : ''}${item.pickupTime && item.returnTime ? ' → ' : ''}${item.returnTime ? esc(item.returnTime) : ''}</span></div>` : ''}
+              ${totalText ? `<div class="hc-row"><span class="hc-ico">💰</span><span class="hc-price">${esc(totalText)}</span></div>` : ''}
+            </div>
             <div class="card-divider"></div>
             <div class="card-footer">
-              <div class="avatar" aria-hidden></div>
+              <div class="hc-avatar" aria-hidden>${otherName ? otherName.charAt(0).toUpperCase() : '?'}</div>
               <div class="lessee">
                 <div class="lessee-name">${otherName}</div>
                 <div class="meta small">${otherRole}</div>
@@ -735,7 +857,7 @@
 
       <!-- Write review -->
       <div id="urWrite" class="review-body hidden">
-        <div class="review-lessee header" style="margin-bottom:16px">
+        <div class="review-lessee header">
           <div class="review-avatar"></div>
           <div>
             <div class="review-lessee-name" id="urWriteName">-</div>
@@ -743,35 +865,106 @@
           </div>
         </div>
 
-        <!-- ① คะแนนอุปกรณ์ (ดาวอย่างเดียว → บันทึกลง Device.Rating) -->
-        <div id="urDeviceStarsSection" style="margin-bottom:18px;padding-bottom:16px;border-bottom:1.5px solid #eef0f5">
-          <div class="review-label" style="margin-bottom:8px">
-            ⭐ คะแนนอุปกรณ์
-            <span style="color:#bbb;font-weight:400;font-size:11px">(บังคับ)</span>
-          </div>
-          <div class="review-stars" id="urDeviceStars" aria-label="คะแนนอุปกรณ์">
-            <button class="star" data-value="1" type="button">★</button>
-            <button class="star" data-value="2" type="button">★</button>
-            <button class="star" data-value="3" type="button">★</button>
-            <button class="star" data-value="4" type="button">★</button>
-            <button class="star" data-value="5" type="button">★</button>
-          </div>
-        </div>
+        <div class="ur-write-scroll">
 
-        <!-- ② คะแนนบุคคล (ดาว + ข้อความ → บันทึกลง UserReview) -->
-        <div class="review-label" style="margin-bottom:8px">
-          👤 คะแนน <span id="urPersonLabel">บุคคล</span>
-          <span style="color:#bbb;font-weight:400;font-size:11px">(บังคับ)</span>
-        </div>
-        <div class="review-stars" id="urWriteStars" aria-label="เลือกคะแนน">
-          <button class="star" data-value="1" type="button">★</button>
-          <button class="star" data-value="2" type="button">★</button>
-          <button class="star" data-value="3" type="button">★</button>
-          <button class="star" data-value="4" type="button">★</button>
-          <button class="star" data-value="5" type="button">★</button>
-        </div>
-        <label class="review-label" for="urWriteText" style="margin-top:14px;display:block">เขียนรีวิว <span style="color:#bbb;font-weight:400">(ไม่บังคับ)</span></label>
-        <textarea id="urWriteText" rows="4" placeholder="แบ่งปันประสบการณ์ของคุณ..."></textarea>
+          <!-- Device section (renter only) -->
+          <div id="urDeviceStarsSection" class="sub-rating-section">
+            <div class="sub-rating-section-title">🖥️ อุปกรณ์</div>
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">คะแนนภาพรวม <span class="req">*</span></span>
+              <div class="review-stars" id="urDeviceStars" aria-label="คะแนนภาพรวมอุปกรณ์">
+                <button class="star" data-value="1" type="button">★</button>
+                <button class="star" data-value="2" type="button">★</button>
+                <button class="star" data-value="3" type="button">★</button>
+                <button class="star" data-value="4" type="button">★</button>
+                <button class="star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">สภาพอุปกรณ์</span>
+              <div class="sub-stars" id="urDeviceConditionStars" data-key="ratingCondition">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">คุ้มค่ากับราคา</span>
+              <div class="sub-stars" id="urDeviceValueStars" data-key="ratingValue">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Person section -->
+          <div class="sub-rating-section">
+            <div class="sub-rating-section-title">👤 <span id="urPersonLabel">บุคคล</span></div>
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">คะแนนภาพรวม <span class="req">*</span></span>
+              <div class="review-stars" id="urWriteStars" aria-label="เลือกคะแนน">
+                <button class="star" data-value="1" type="button">★</button>
+                <button class="star" data-value="2" type="button">★</button>
+                <button class="star" data-value="3" type="button">★</button>
+                <button class="star" data-value="4" type="button">★</button>
+                <button class="star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">การสื่อสาร</span>
+              <div class="sub-stars" id="urCommunicationStars" data-key="ratingCommunication">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <!-- renter only: ตรงตามที่บอก -->
+            <div class="sub-rating-row" id="urAccuracyRow">
+              <span class="sub-rating-label">ตรงตามที่บอก</span>
+              <div class="sub-stars" id="urAccuracyStars" data-key="ratingAccuracy">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <!-- owner only: ดูแลอุปกรณ์ -->
+            <div class="sub-rating-row" id="urCareRow">
+              <span class="sub-rating-label">ดูแลอุปกรณ์</span>
+              <div class="sub-stars" id="urCareStars" data-key="ratingCare">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <!-- both: ตรงเวลา -->
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">ตรงเวลา</span>
+              <div class="sub-stars" id="urPunctualityStars" data-key="ratingPunctuality">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+          </div>
+
+          <label class="review-label" for="urWriteText" style="margin-top:4px;display:block">📝 ความคิดเห็น <span style="color:#bbb;font-weight:400;font-size:11px">(ไม่บังคับ)</span></label>
+          <textarea id="urWriteText" rows="3" placeholder="แบ่งปันประสบการณ์ของคุณ..." style="min-height:72px"></textarea>
+
+        </div><!-- /.ur-write-scroll -->
+
         <div class="modal-actions" style="margin-top:14px">
           <button id="urSubmit" class="btn btn-cta" type="button">ส่งรีวิว</button>
           <button class="btn btn-outline urCloseBtn" type="button">ยกเลิก</button>
@@ -826,10 +1019,16 @@
       if (writeRole)   writeRole.textContent   = role === 'renter' ? '(เจ้าของอุปกรณ์)' : '(ผู้เช่าอุปกรณ์)';
       if (titleEl)     titleEl.textContent     = role === 'renter' ? '⭐ รีวิวเจ้าของ' : '⭐ รีวิวผู้เช่า';
       if (personLabel) personLabel.textContent = role === 'renter' ? 'เจ้าของอุปกรณ์' : 'ผู้เช่า';
-      // แสดง device stars เฉพาะผู้เช่า (renter) เท่านั้น
+      // Show/hide sections based on role
       if (deviceStarsSection) deviceStarsSection.style.display = role === 'renter' ? '' : 'none';
+      const accuracyRow = document.getElementById('urAccuracyRow');
+      const careRow     = document.getElementById('urCareRow');
+      if (accuracyRow) accuracyRow.style.display = role === 'renter' ? '' : 'none';
+      if (careRow)     careRow.style.display     = role === 'owner'  ? '' : 'none';
+      // Reset all stars
       if (starsEl)     Array.from(starsEl.querySelectorAll('.star')).forEach(s=>s.classList.remove('active'));
       if (deviceStarsEl) Array.from(deviceStarsEl.querySelectorAll('.star')).forEach(s=>s.classList.remove('active'));
+      document.querySelectorAll('#urWrite .sub-star').forEach(s => s.classList.remove('active'));
       if (textEl)      textEl.value = '';
       showOnly(loading);
       overlay.classList.add('open');
@@ -894,27 +1093,52 @@
       );
     });
 
-    // Submit — บันทึกทั้งคะแนนอุปกรณ์และคะแนนบุคคล
+    // Sub-star rating (delegated from #urWrite)
+    const urWriteEl = document.getElementById('urWrite');
+    urWriteEl && urWriteEl.addEventListener('click', e => {
+      const s = e.target.closest('.sub-star');
+      if (!s) return;
+      const container = s.closest('.sub-stars');
+      if (!container) return;
+      const val = parseInt(s.dataset.value, 10);
+      Array.from(container.querySelectorAll('.sub-star')).forEach(st =>
+        st.classList.toggle('active', parseInt(st.dataset.value, 10) <= val)
+      );
+    });
+
+    // Submit — บันทึกทั้งคะแนนอุปกรณ์และคะแนนบุคคล (พร้อม sub-ratings)
     submitBtn && submitBtn.addEventListener('click', async () => {
       const isRenter    = activeRole === 'renter';
       const deviceStars = deviceStarsEl ? deviceStarsEl.querySelectorAll('.star.active').length : 0;
       const personStars = starsEl       ? starsEl.querySelectorAll('.star.active').length       : 0;
       const text        = textEl        ? textEl.value.trim()                                   : '';
-      if (isRenter && !deviceStars) { alert('กรุณาเลือกคะแนนอุปกรณ์ (1–5 ดาว)'); return; }
-      if (!personStars) { alert('กรุณาเลือกคะแนนบุคคล (1–5 ดาว)'); return; }
+      if (isRenter && !deviceStars) { alert('กรุณาเลือกคะแนนภาพรวมอุปกรณ์ (1–5 ดาว)'); return; }
+      if (!personStars) { alert('กรุณาเลือกคะแนนภาพรวมบุคคล (1–5 ดาว)'); return; }
       if (!activeRequestNo) { alert('ไม่พบรายการเช่า'); return; }
       const token = localStorage.getItem('access_token') || '';
       if (!token) { alert('กรุณาเข้าสู่ระบบก่อน'); return; }
 
+      // Collect optional sub-rating values (null = not rated)
+      function subVal(id) {
+        const el = document.getElementById(id);
+        const n = el ? el.querySelectorAll('.sub-star.active').length : 0;
+        return n > 0 ? n : null;
+      }
+
       submitBtn.disabled    = true;
       submitBtn.textContent = 'กำลังบันทึก...';
       try {
-        // 1️⃣ บันทึกคะแนนอุปกรณ์ (เฉพาะผู้เช่า) → Review table → trigger อัพเดท Device.Rating อัตโนมัติ
+        // 1️⃣ บันทึกคะแนนอุปกรณ์ (เฉพาะผู้เช่า) → Review table
         if (isRenter && activeDeviceNo) {
           const devRes = await fetch(`/api/devices/${activeDeviceNo}/reviews`, {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rating: deviceStars, description: '' })
+            body: JSON.stringify({
+              rating:          deviceStars,
+              description:     '',
+              ratingCondition: subVal('urDeviceConditionStars'),
+              ratingValue:     subVal('urDeviceValueStars'),
+            })
           });
           if (!devRes.ok) {
             const d = await devRes.json().catch(()=>({}));
@@ -925,7 +1149,15 @@
         const res = await fetch('/api/reviews', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ requestNo: activeRequestNo, rating: personStars, description: text })
+          body: JSON.stringify({
+            requestNo:           activeRequestNo,
+            rating:              personStars,
+            description:         text,
+            ratingCommunication: subVal('urCommunicationStars'),
+            ratingPunctuality:   subVal('urPunctualityStars'),
+            ratingAccuracy:      isRenter  ? subVal('urAccuracyStars') : null,
+            ratingCare:          !isRenter ? subVal('urCareStars')     : null,
+          })
         });
         const result = await res.json();
         if (!res.ok || !result.success) throw new Error(result.message || 'บันทึกไม่สำเร็จ');

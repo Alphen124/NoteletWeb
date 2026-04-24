@@ -697,7 +697,7 @@
       try {
         const resp   = await fetch('/api/devices/browse');
         const result = await resp.json();
-        let devices  = (Array.isArray(result.data) ? result.data : []).filter(d => d.isAdminDevice || d.is_admin_device);
+        let devices  = (Array.isArray(result.data) ? result.data : []).filter(d => (d.isAdminDevice || d.is_admin_device) && Number(d.price) === 0);
         if (type)    devices = devices.filter(d => (d.type||'').toLowerCase().includes(type));
         if (kw)      devices = devices.filter(d => (d.name||'').toLowerCase().includes(kw));
         if (cpu)     devices = devices.filter(d => (d.cpu||d.description||'').toLowerCase().includes(cpu));

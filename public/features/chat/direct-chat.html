@@ -347,12 +347,13 @@ html, body {
 'use strict';
 
 /* ─── Query params ─── */
-const QP         = Object.fromEntries(new URLSearchParams(location.search));
-const deviceId   = parseInt(QP.deviceId)  || 0;
-const deviceName = decodeURIComponent(QP.deviceName  || 'อุปกรณ์');
-const ownerName  = decodeURIComponent(QP.ownerName   || 'เจ้าของ');
-const deviceImg  = QP.deviceImg ? decodeURIComponent(QP.deviceImg) : '';
-const deviceType = decodeURIComponent(QP.deviceType  || '');
+const QP          = Object.fromEntries(new URLSearchParams(location.search));
+const deviceId    = parseInt(QP.deviceId)   || 0;
+const deviceName  = decodeURIComponent(QP.deviceName  || 'อุปกรณ์');
+const ownerName   = decodeURIComponent(QP.ownerName   || 'เจ้าของ');
+const ownerUserId = parseInt(QP.ownerUserId) || 0;
+const deviceImg   = QP.deviceImg ? decodeURIComponent(QP.deviceImg) : '';
+const deviceType  = decodeURIComponent(QP.deviceType  || '');
 const pricePerDay = parseFloat(QP.pricePerDay) || 0;
 
 /* ─── Auth ─── */
@@ -433,27 +434,36 @@ function enableInput(on) {
   document.getElementById('dc_sendBtn').disabled   = !on;
 }
 
-/* ─── Open chat room via API, then connect WS ─── */
+/* ─── Open direct chat room ─── */
+/* If a room name is given directly in QP.room (e.g. from owner inbox), skip the API call.
+   Otherwise call the API to obtain a backend-valid room name, then connect via WS.
+   Passes ownerUserId so the API can link the correct pair of participants. */
 async function openChat() {
+  if (QP.room) {
+    // Room name given directly — connect without calling the API
+    wsRoom = QP.room;
+    document.getElementById('dc_chatSub').textContent = 'แชทส่วนตัว';
+    connectWS(wsRoom);
+    return;
+  }
   try {
+    const body = { deviceId };
+    if (ownerUserId) body.ownerUserId = ownerUserId;
     const res = await fetch('/api/chat/device-room', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + user.token },
-      body: JSON.stringify({ deviceId }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (!data.roomName) throw new Error('no room');
     wsRoom = data.roomName;
-    document.getElementById('dc_chatSub').textContent = 'แชทกับ ' + ownerName + ' · ห้อง ' + data.roomName;
-    connectWS(data.roomName);
   } catch (e) {
-    // fallback offline room
-    wsRoom = 'dev-' + deviceId + '-u-' + (user.userId || 0);
-    connectWS(wsRoom);
-    enableInput(true);
-    appendSys('⚠️ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์แชทได้');
+    // Fallback to the standard pattern the backend creates for this user+device pair
+    wsRoom = `dev-${deviceId}-u-${user.userId || 0}`;
   }
+  document.getElementById('dc_chatSub').textContent = 'แชทส่วนตัวกับ ' + ownerName;
+  connectWS(wsRoom);
 }
 
 /* ─── WebSocket ─── */
@@ -493,6 +503,9 @@ function connectWS(room) {
       if (msg.type === 'history') { onHistory(msg); return; }
       if (msg.type === 'typing')  { onTyping(msg); return; }
       if (msg.type === 'chat' || msg.type === 'message') {
+        // Skip echo of own messages — already shown locally in sendMsg()
+        const senderId = msg.userId || msg.senderId || 0;
+        if (senderId && senderId === user.userId) return;
         appendMsg(msg, false);
       }
     } catch (_) {}

@@ -168,17 +168,23 @@ function updateHeaderForAuth() {
     if (isAuthenticated()) {
         const user = getUserData();
         const userName = user ? (user.fname ?? user.email.split('@')[0]) : 'User';
+        const isAdmin = !!(user && (user.is_admin === true || user.is_admin === 'true'));
+        const adminLink = isAdmin
+            ? `<a href="/features/management/admin-dashboard.html" style="color:#FFE492;font-weight:700;">🛡️ Admin Panel</a>`
+            : '';
         headerActions.innerHTML = `
       <div class="user-menu">
         <button class="btn btn-ghost user-dropdown-btn" id="userMenuBtn" onclick="toggleUserMenu(event)">
           <span class="user-avatar">${userName.charAt(0).toUpperCase()}</span>
           <span class="user-name">${userName}</span>
+          ${isAdmin ? `<span style="font-size:10px;background:#FFE492;color:#043873;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:6px;">ADMIN</span>` : ''}
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="margin-left:6px;vertical-align:middle;"><path d="M5 8l5 5 5-5" stroke="#4F9CF9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="user-popup-card hidden" id="userPopupCard">
           <div class="user-popup-avatar">${userName.charAt(0).toUpperCase()}</div>
           <div class="user-popup-name">${userName}</div>
           <div class="user-popup-actions">
+            ${adminLink}
             <a href="#" onclick="logout(); return false;">ออกจากระบบ</a>
           </div>
         </div>

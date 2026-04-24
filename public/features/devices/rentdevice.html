@@ -102,6 +102,60 @@
     .reply-form .reply-submit:disabled { opacity:.5; cursor:not-allowed; }
     .reply-form-label { font-size:12px; color:#888; margin-bottom:6px; font-weight:600; }
 
+    /* ── Sub-rating chips in review cards ────────────────────── */
+    .review-subratings { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 6px; }
+    .rv-sub-group {
+      flex:1; min-width:140px;
+      background:#f8faff; border-radius:10px;
+      padding:9px 12px 7px;
+      border:1px solid #dde8f8;
+    }
+    .rv-sub-title {
+      font-size:11px; font-weight:700; color:#2563eb;
+      margin-bottom:6px;
+      display:flex; align-items:center; gap:5px;
+      text-transform:uppercase; letter-spacing:.4px;
+    }
+    .rv-sub-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:3px 0;
+      border-bottom:1px solid #eef2fb;
+    }
+    .rv-sub-row:last-child { border-bottom:none; }
+    .rv-sub-label { font-size:12px; color:#374151; }
+    .rv-sub-stars { font-size:13px; color:#FFC000; letter-spacing:1px; }
+
+    /* ── Sub-rating bars in rating summary ───────────────────── */
+    .sum-sub-sect {
+      margin-top:14px; padding-top:12px;
+      border-top:1px solid #f0f4ff;
+      text-align:left;
+    }
+    .sum-sub-title {
+      font-size:11px; font-weight:700; color:#2563eb;
+      text-transform:uppercase; letter-spacing:.5px;
+      margin-bottom:7px;
+      display:flex; align-items:center; gap:5px;
+    }
+    .sum-sub-row {
+      display:flex; align-items:center; gap:7px;
+      margin-bottom:5px;
+    }
+    .sum-sub-label { font-size:11px; color:#555; flex:1; white-space:nowrap; }
+    .sum-sub-bar {
+      width:72px; height:7px;
+      background:#e8ecf4; border-radius:6px; overflow:hidden; flex-shrink:0;
+    }
+    .sum-sub-bar-fill {
+      height:100%;
+      background:linear-gradient(90deg,#FFC000,#f59e0b);
+      border-radius:6px;
+    }
+    .sum-sub-val {
+      font-size:11px; font-weight:700; color:#1a1a2e;
+      width:26px; text-align:right; flex-shrink:0;
+    }
+
     /* ── Chat Bubble Button ────────────────────────────────────── */
     .chat-bubble-btn {
       position:fixed; bottom:28px; right:28px;
@@ -467,6 +521,22 @@
         const ratingCounts = {5:0, 4:0, 3:0, 2:0, 1:0};
         (reviews || []).forEach(rv => { if (rv.rating >= 1 && rv.rating <= 5) ratingCounts[rv.rating]++; });
 
+        // Compute sub-rating averages
+        const _subKeys = {
+          ratingCondition:     '\u0e2a\u0e20\u0e32\u0e1e\u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c',
+          ratingValue:         '\u0e04\u0e38\u0e49\u0e21\u0e04\u0e48\u0e32\u0e01\u0e31\u0e1a\u0e23\u0e32\u0e04\u0e32',
+          ratingCommunication: '\u0e01\u0e32\u0e23\u0e2a\u0e37\u0e48\u0e2d\u0e2a\u0e32\u0e23',
+          ratingAccuracy:      '\u0e15\u0e23\u0e07\u0e15\u0e32\u0e21\u0e17\u0e35\u0e48\u0e1a\u0e2d\u0e01',
+          ratingPunctuality:   '\u0e15\u0e23\u0e07\u0e40\u0e27\u0e25\u0e32'
+        };
+        const _subAvg = {};
+        Object.keys(_subKeys).forEach(k => {
+          const vals = (reviews || []).map(rv => Number(rv[k]||0)).filter(v => v > 0);
+          _subAvg[k] = vals.length > 0 ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+        });
+        const _subBarHtml = (label, val) => !val ? '' :
+          `<div class="sum-sub-row"><span class="sum-sub-label">${label}</span><div class="sum-sub-bar"><div class="sum-sub-bar-fill" style="width:${(val/5*100).toFixed(0)}%"></div></div><span class="sum-sub-val">${val.toFixed(1)}</span></div>`;
+
         ratingSummaryEl.innerHTML = `
           <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-bottom:8px;">
             <div style="font-size:28px;font-weight:700;">${averageRating.toFixed(1)}</div>
@@ -479,6 +549,21 @@
           row.innerHTML = `<div class="label">${star}</div><div class="bar"><div class="fill" style="width:${fillPct}%"></div></div><div class="count">${ratingCounts[star]||0}</div>`;
           ratingSummaryEl.appendChild(row);
         });
+        // Sub-rating breakdown
+        const _hasDeviceSub = _subAvg.ratingCondition || _subAvg.ratingValue;
+        const _hasOwnerSub  = _subAvg.ratingCommunication || _subAvg.ratingAccuracy || _subAvg.ratingPunctuality;
+        if (_hasDeviceSub || _hasOwnerSub) {
+          const subSect = document.createElement('div'); subSect.className = 'sum-sub-sect';
+          subSect.innerHTML =
+            (_hasDeviceSub ? `<div class="sum-sub-title">&#x1F5A5;&#xFE0F; \u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c</div>
+              ${_subBarHtml('\u0e2a\u0e20\u0e32\u0e1e\u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c', _subAvg.ratingCondition)}
+              ${_subBarHtml('\u0e04\u0e38\u0e49\u0e21\u0e04\u0e48\u0e32\u0e01\u0e31\u0e1a\u0e23\u0e32\u0e04\u0e32', _subAvg.ratingValue)}` : '') +
+            (_hasOwnerSub ? `<div class="sum-sub-title" style="margin-top:12px;">&#x1F464; \u0e40\u0e08\u0e49\u0e32\u0e02\u0e2d\u0e07\u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c</div>
+              ${_subBarHtml('\u0e01\u0e32\u0e23\u0e2a\u0e37\u0e48\u0e2d\u0e2a\u0e32\u0e23', _subAvg.ratingCommunication)}
+              ${_subBarHtml('\u0e15\u0e23\u0e07\u0e15\u0e32\u0e21\u0e17\u0e35\u0e48\u0e1a\u0e2d\u0e01', _subAvg.ratingAccuracy)}
+              ${_subBarHtml('\u0e15\u0e23\u0e07\u0e40\u0e27\u0e25\u0e32', _subAvg.ratingPunctuality)}` : '');
+          ratingSummaryEl.appendChild(subSect);
+        }
 
         if (!reviews || reviews.length === 0) {
           reviewListEl.innerHTML = `
@@ -518,6 +603,24 @@
               </div>`;
           }
 
+          // Helper: render small stars for a sub-rating value
+          const subStarStr = v => { const n = Math.round(Number(v)||0); return n > 0 ? '\u2605'.repeat(n)+'\u2606'.repeat(5-n) : '<span style="color:#ccc">\u2014</span>'; };
+          // Build sub-rating rows only when data exists
+          const deviceSubHtml = [
+            rv.ratingCondition ? `<div class="rv-sub-row"><span class="rv-sub-label">\u0e2a\u0e20\u0e32\u0e1e\u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c</span><span class="rv-sub-stars">${subStarStr(rv.ratingCondition)}</span></div>` : '',
+            rv.ratingValue    ? `<div class="rv-sub-row"><span class="rv-sub-label">\u0e04\u0e38\u0e49\u0e21\u0e04\u0e48\u0e32\u0e01\u0e31\u0e1a\u0e23\u0e32\u0e04\u0e32</span><span class="rv-sub-stars">${subStarStr(rv.ratingValue)}</span></div>` : ''
+          ].filter(Boolean).join('');
+          const ownerSubHtml = [
+            rv.ratingCommunication ? `<div class="rv-sub-row"><span class="rv-sub-label">\u0e01\u0e32\u0e23\u0e2a\u0e37\u0e48\u0e2d\u0e2a\u0e32\u0e23</span><span class="rv-sub-stars">${subStarStr(rv.ratingCommunication)}</span></div>` : '',
+            rv.ratingAccuracy     ? `<div class="rv-sub-row"><span class="rv-sub-label">\u0e15\u0e23\u0e07\u0e15\u0e32\u0e21\u0e17\u0e35\u0e48\u0e1a\u0e2d\u0e01</span><span class="rv-sub-stars">${subStarStr(rv.ratingAccuracy)}</span></div>` : '',
+            rv.ratingPunctuality  ? `<div class="rv-sub-row"><span class="rv-sub-label">\u0e15\u0e23\u0e07\u0e40\u0e27\u0e25\u0e32</span><span class="rv-sub-stars">${subStarStr(rv.ratingPunctuality)}</span></div>` : ''
+          ].filter(Boolean).join('');
+          const subRatingsHtml = (deviceSubHtml || ownerSubHtml) ? `
+            <div class="review-subratings">
+              ${deviceSubHtml ? `<div class="rv-sub-group"><div class="rv-sub-title">&#x1F5A5;&#xFE0F; \u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c</div>${deviceSubHtml}</div>` : ''}
+              ${ownerSubHtml ? `<div class="rv-sub-group"><div class="rv-sub-title">&#x1F464; \u0e40\u0e08\u0e49\u0e32\u0e02\u0e2d\u0e07\u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c</div>${ownerSubHtml}</div>` : ''}
+            </div>` : '';
+
           const item = document.createElement('div'); item.className = 'review-item';
           item.innerHTML = `
             <div style="display:flex;gap:12px;align-items:center;">
@@ -527,6 +630,7 @@
                 <div class="review-stars" style="color:#FFC000;">${starStr}</div>
               </div>
             </div>
+            ${subRatingsHtml}
             <p class="review-text">${rv.description ? escapeHtml(rv.description) : '<em style="color:#aaa">\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e23\u0e30\u0e1a\u0e38\u0e02\u0e49\u0e2d\u0e04\u0e27\u0e32\u0e21</em>'}</p>
             ${replyHtml}`;
           reviewListEl.appendChild(item);
@@ -677,6 +781,7 @@
         deviceId:    id || '',
         deviceName:  dName,
         ownerName:   oName,
+        ownerUserId: window._ownerUserId || 0,
         pricePerDay: ppd,
         deviceType:  (window._deviceType || ''),
         deviceImg:   img,
@@ -688,7 +793,7 @@
     const API_BASE = '';
     let _chatRoomName = null;
 
-    function openChatPopup(room, dName) {
+    function openChatPopup(room, dName, reqNo) {
       const pickup  = document.getElementById('pickup')?.value  || '';
       const returnt = document.getElementById('returnt')?.value || '';
       const ppd     = window._pricePerDay || 0;
@@ -702,6 +807,7 @@
         '&pricePerDay=' + encodeURIComponent(ppd) +
         '&totalPrice='  + encodeURIComponent(total) +
         '&skipModal=1' +
+        (reqNo         ? '&requestNo='  + encodeURIComponent(reqNo)              : '') +
         (startDateEl.value ? '&startDate=' + encodeURIComponent(startDateEl.value) : '') +
         (endDateEl.value   ? '&endDate='   + encodeURIComponent(endDateEl.value)   : '') +
         (pickup  ? '&pickup='  + encodeURIComponent(pickup)  : '') +
@@ -716,7 +822,11 @@
         const stored = localStorage.getItem('chat_room_' + id);
         if (stored) {
           const c = JSON.parse(stored);
-          if (c && c.roomName) showChatBubble(c.roomName, c.deviceName || '');
+          // Only show the bubble if the stored room is NOT the completed room
+          const completedRoom = localStorage.getItem('notelet_completed_room_dev_' + id);
+          if (c && c.roomName && c.roomName !== completedRoom) {
+            showChatBubble(c.roomName, c.deviceName || '');
+          }
         }
       } catch (_) {}
     }
@@ -763,7 +873,12 @@
           })
         });
 
-        if (!rentalRes.ok) {
+        // Extract requestNo from new rental request for new-session room naming
+        let newRequestNo = 0;
+        if (rentalRes.ok) {
+          const rentalData = await rentalRes.json().catch(() => ({}));
+          newRequestNo = rentalData.requestNo || (rentalData.data && rentalData.data.requestNo) || 0;
+        } else {
           const rd = await rentalRes.json().catch(() => ({}));
           // If the user already has a pending request, just open chat (don't block)
           if (!(rentalRes.status === 400 && rd.message && rd.message.includes('already have a pending'))) {
@@ -778,7 +893,7 @@
         const roomRes = await fetch(API_BASE + '/api/chat/device-room', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ deviceId: parseInt(id, 10) })
+          body: JSON.stringify({ deviceId: parseInt(id, 10), ...(newRequestNo ? { requestNo: newRequestNo } : {}) })
         });
 
         let room = 'dev-' + id;
@@ -787,11 +902,17 @@
           room = rd.roomName || room;
         }
 
+        // Client-side fallback: if backend returned the same completed room, create a fresh one
+        const _completedRoom = localStorage.getItem('notelet_completed_room_dev_' + id);
+        if (_completedRoom && _completedRoom === room && newRequestNo) {
+          room = room + '-req-' + newRequestNo;
+        }
+
         // 3. Store for future re-entry
-        localStorage.setItem('chat_room_' + id, JSON.stringify({ roomName: room, deviceName: dName, deviceId: id }));
+        localStorage.setItem('chat_room_' + id, JSON.stringify({ roomName: room, deviceName: dName, deviceId: id, requestNo: newRequestNo }));
 
         // 4. Open chat popup
-        openChatPopup(room, dName);
+        openChatPopup(room, dName, newRequestNo);
 
         // 5. Show bubble for returning to chat
         showChatBubble(room, dName);

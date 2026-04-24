@@ -251,6 +251,42 @@
       padding: 3px 9px; border-radius: 20px;
     }
 
+    /* --- RECOMMENDATION STRIP (inside featured section) --- */
+    .rec-strip { margin-bottom: 36px; }
+    .rec-strip-title { font-size: 17px; font-weight: 700; color: #1e2d4a; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .rec-row {
+      display: flex; gap: 16px; overflow-x: auto;
+      padding-bottom: 8px; scrollbar-width: thin;
+    }
+    .rec-row::-webkit-scrollbar { height: 4px; }
+    .rec-row::-webkit-scrollbar-thumb { background: #dde3ec; border-radius: 4px; }
+    .rec-card-s {
+      min-width: 170px; max-width: 170px; background: #fff;
+      border-radius: 12px; overflow: hidden;
+      border: 1.5px solid #e8ecf4; flex-shrink: 0;
+      cursor: pointer; transition: transform .2s, box-shadow .2s;
+      text-decoration: none; color: inherit;
+    }
+    .rec-card-s:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(4,56,115,0.12); }
+    .rec-card-s-img {
+      width: 100%; aspect-ratio: 4/3; background: #C4DEFD;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; font-size: 34px;
+    }
+    .rec-card-s-img img { width: 100%; height: 100%; object-fit: cover; }
+    .rec-card-s-body { padding: 10px 12px; }
+    .rec-card-s-type { font-size: 10px; font-weight: 600; color: #7b8ab8; text-transform: uppercase; margin-bottom: 2px; }
+    .rec-card-s-name { font-size: 13px; font-weight: 700; color: #1e2d4a; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+    .rec-card-s-price { font-size: 12px; font-weight: 700; color: #043873; }
+    .rec-skeleton-s {
+      min-width: 170px; max-width: 170px; height: 150px;
+      background: linear-gradient(90deg, #e8ecf4 25%, #f4f6fa 50%, #e8ecf4 75%);
+      background-size: 200% 100%;
+      animation: skshimmer 1.4s infinite;
+      border-radius: 12px; flex-shrink: 0;
+    }
+    @keyframes skshimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
     /* --- FEATURED DEVICES --- */
     .section-featured { background: #f4f6fa; padding: 72px 0 60px; }
     .section-label { font-size: 12px; font-weight: 700; color: #4F9CF9; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
@@ -480,9 +516,9 @@
     <!-- ══ FEATURED DEVICES ══ -->
     <section class="section-featured" id="featured">
       <div class="container">
-        <p class="section-label">อุปกรณ์แนะนำ</p>
-        <h2 class="section-title">อุปกรณ์พร้อมให้เช่าตอนนี้</h2>
-        <p class="section-sub">เลือกจากอุปกรณ์คุณภาพสูงที่ผู้ใช้งานลงทะเบียนไว้</p>
+        <p class="section-label" id="indexFeatLabel">อุปกรณ์แนะนำ</p>
+        <h2 class="section-title" id="indexFeatTitle">อุปกรณ์พร้อมให้เช่าตอนนี้</h2>
+        <p class="section-sub" id="indexFeatSub">เลือกจากอุปกรณ์คุณภาพสูงที่ผู้ใช้งานลงทะเบียนไว้</p>
         <div class="featured-grid" id="featuredGrid">
           <div class="feat-empty">⏳ กำลังโหลดอุปกรณ์...</div>
         </div>
@@ -743,7 +779,7 @@
         });
       });
 
-      // Load featured devices + start realtime rating refresh
+      // Load featured/recommendation section then start rating refresh
       loadFeaturedDevices(token);
       setTimeout(() => refreshFeatRatings(token), 500);
       setInterval(() => refreshFeatRatings(localStorage.getItem('access_token')), 30000);
@@ -756,42 +792,86 @@
       window.location.href = target + (q ? '?q=' + encodeURIComponent(q) : '');
     }
 
+    function renderFeatCard(d) {
+      const isAdmin = Number(d.price) === 0;
+      const imgUrl  = parseImg(d.imageUrl || d.image_url || '');
+      const price   = isAdmin
+        ? '<span style="color:#0a5ba8;font-size:13px;font-weight:700;">📚 ยืมจากคณะ (ฟรี)</span>'
+        : (d.price != null ? `${Number(d.price).toFixed(0)} บาท<span>/วัน</span>` : 'ฟรี');
+      const st       = (d.status || '').toLowerCase();
+      const statusOk = st === 'available' || st === 'request pending' || st === '';
+      return `
+        <div class="feat-card${isAdmin ? ' admin-feat-card' : ''}">
+          <div class="feat-card-img" style="${isAdmin ? 'background:linear-gradient(135deg,#b8d8ff,#dbeeff);' : ''}">
+            ${imgUrl ? `<img src="${imgUrl}" alt="${escH(d.name)}" loading="lazy">` : '💻'}
+            <span class="feat-badge" style="${isAdmin ? 'background:#22c55e;' : (statusOk ? '' : 'background:#ef4444;')}">${isAdmin ? 'ยืมได้' : (statusOk ? 'พร้อมเช่า' : 'ไม่ว่าง')}</span>
+            ${isAdmin ? '<span style="position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#4F9CF9,#043873);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;">🛡️ คณะ</span>' : ''}
+          </div>
+          <div class="feat-card-body" style="${isAdmin ? 'background:#f0f7ff;' : ''}">
+            <div class="feat-type" style="${isAdmin ? 'color:#4F9CF9;' : ''}">${escH(d.type || '')}</div>
+            <div class="feat-name" style="${isAdmin ? 'color:#0a3d7a;' : ''}">${escH(d.name || 'อุปกรณ์')}</div>
+            <div class="feat-price">${price}</div>
+            <div class="feat-stars" id="star-feat-${d.deviceNo || d.id || ''}">${isAdmin ? '' : renderFeatStars(d.rating || 0)}</div>
+            <button class="feat-btn" style="${isAdmin ? 'background:#4F9CF9;' : ''}" onclick="goDevice('${escH(String(d.deviceNo || d.id || ''))}', ${isAdmin})">
+              ${isAdmin ? '📚 ยืมจากคณะ' : '🛒 ดูรายละเอียด'}
+            </button>
+          </div>
+        </div>`;
+    }
+
     async function loadFeaturedDevices(token) {
-      const grid = document.getElementById('featuredGrid');
+      const grid  = document.getElementById('featuredGrid');
+      const label = document.getElementById('indexFeatLabel');
+      const title = document.getElementById('indexFeatTitle');
+      const sub   = document.getElementById('indexFeatSub');
+
       try {
-        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-        // /api/devices requires auth; use public /api/devices/browse when not logged in
-        const endpoint = token ? '/api/devices' : '/api/devices/browse';
-        const res = await fetch(endpoint, { headers });
-        if (!res.ok) throw new Error();
-        const json = await res.json();
-        const raw = json.data;
-        const devices = (Array.isArray(raw) ? raw : (raw?.data || [])).slice(0, 8);
+        let devices = [];
+        let isPersonalized = false;
+
+        // ── Try personalised recommendations when logged in ──────
+        if (token) {
+          try {
+            const recRes = await fetch('/api/recommendations', {
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (recRes.ok) {
+              const recJson = await recRes.json();
+              const recData = Array.isArray(recJson.data) ? recJson.data : [];
+              if (recData.length > 0) {
+                devices = recData.slice(0, 8);
+                isPersonalized = true;
+              }
+            }
+          } catch(e) {}
+        }
+
+        // ── Fallback: popular from public browse ─────────────────
+        if (!devices.length) {
+          const headers   = token ? { 'Authorization': 'Bearer ' + token } : {};
+          const endpoint  = token ? '/api/devices' : '/api/devices/browse';
+          const res = await fetch(endpoint, { headers });
+          if (!res.ok) throw new Error();
+          const json = await res.json();
+          const raw  = json.data;
+          const all  = Array.isArray(raw) ? raw : (raw?.data || []);
+          // Sort by rating descending for "popular" feel
+          devices = all.sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 8);
+        }
+
+        // ── Update section heading ───────────────────────────────
+        if (isPersonalized) {
+          if (label) label.textContent = 'แนะนำสำหรับคุณ';
+          if (title) title.textContent = '✨ เลือกตามความสนใจของคุณ';
+          if (sub)   sub.textContent   = 'อิงจากประวัติการเช่าและการกดดูของคุณ';
+        } else {
+          if (label) label.textContent = 'อุปกรณ์ยอดนิยม';
+          if (title) title.textContent = '🔥 อุปกรณ์ที่ได้รับความนิยมสูงสุด';
+          if (sub)   sub.textContent   = 'เลือกจากอุปกรณ์ที่มีคะแนนรีวิวดีที่สุด';
+        }
+
         if (!devices.length) { grid.innerHTML = '<div class="feat-empty">📦 ยังไม่มีอุปกรณ์ในระบบ</div>'; return; }
-        grid.innerHTML = devices.map(d => {
-          const isAdmin = Number(d.price) === 0;
-          const imgUrl = parseImg(d.imageUrl || d.image_url || '');
-          const price = isAdmin ? '<span style="color:#0a5ba8;font-size:13px;font-weight:700;">📚 ยืมจากคณะ (ฟรี)</span>' : (d.price != null ? `${Number(d.price).toFixed(0)} บาท<span>/วัน</span>` : 'ฟรี');
-          const st = (d.status || '').toLowerCase();
-          const statusOk = st === 'available' || st === 'request pending';
-          return `
-          <div class="feat-card${isAdmin ? ' admin-feat-card' : ''}">
-            <div class="feat-card-img" style="${isAdmin ? 'background:linear-gradient(135deg,#b8d8ff,#dbeeff);' : ''}">
-              ${imgUrl ? `<img src="${imgUrl}" alt="${escH(d.name)}" loading="lazy">` : '💻'}
-              <span class="feat-badge" style="${isAdmin ? 'background:#22c55e;' : (statusOk ? '' : 'background:#ef4444;')}">${isAdmin ? 'ยืมได้' : (statusOk ? 'พร้อมเช่า' : 'ไม่ว่าง')}</span>
-              ${isAdmin ? '<span style="position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#4F9CF9,#043873);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;">🛡️ คณะ</span>' : ''}
-            </div>
-            <div class="feat-card-body" style="${isAdmin ? 'background:#f0f7ff;' : ''}">
-              <div class="feat-type" style="${isAdmin ? 'color:#4F9CF9;' : ''}">${escH(d.type || '')}</div>
-              <div class="feat-name" style="${isAdmin ? 'color:#0a3d7a;' : ''}">${escH(d.name || 'อุปกรณ์')}</div>
-              <div class="feat-price">${price}</div>
-              <div class="feat-stars" id="star-feat-${d.deviceNo || d.id || ''}">${isAdmin ? '' : renderFeatStars(d.rating||0)}</div>
-              <button class="feat-btn" style="${isAdmin ? 'background:#4F9CF9;' : ''}" onclick="goDevice('${escH(String(d.deviceNo || d.id || ''))}', ${isAdmin})">
-                ${isAdmin ? '📚 ยืมจากคณะ' : '🛒 ดูรายละเอียด'}
-              </button>
-            </div>
-          </div>`;
-        }).join('');
+        grid.innerHTML = devices.map(d => renderFeatCard(d)).join('');
       } catch(e) {
         grid.innerHTML = '<div class="feat-empty">📦 ไม่สามารถโหลดอุปกรณ์ได้ในขณะนี้</div>';
       }
@@ -799,7 +879,20 @@
 
     function goDevice(id, isBorrow) {
       if (isBorrow) { window.location.href = '/features/management/giveout.html'; return; }
+      logIndexEvent(id, 'click');
       window.location.href = '/features/devices/rentdevice.html?id=' + encodeURIComponent(id);
+    }
+
+    async function logIndexEvent(deviceNo, eventType) {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+        await fetch('/api/devices/events', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceNo: Number(deviceNo), eventType })
+        });
+      } catch(e) {}
     }
 
     function normalizeImgUrl(url) {

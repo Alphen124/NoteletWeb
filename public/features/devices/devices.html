@@ -10,6 +10,50 @@
   <script src="/js/auth.js"></script>
   <script src="/js/chat-notifications.js"></script>
   <style>
+    /* RECOMMENDATION SECTION */
+    .rec-section {
+      background: #fff;
+      border-bottom: 1px solid #e8ecf4;
+      padding: 28px 0 20px;
+    }
+    .rec-section h2 {
+      font-size: 18px; font-weight: 700; color: #1e2d4a;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .rec-grid {
+      display: flex; gap: 16px; overflow-x: auto;
+      padding-bottom: 8px; scrollbar-width: thin;
+    }
+    .rec-grid::-webkit-scrollbar { height: 4px; }
+    .rec-grid::-webkit-scrollbar-thumb { background: #dde3ec; border-radius: 4px; }
+    .rec-card {
+      min-width: 180px; max-width: 180px; background: #f4f6fa;
+      border-radius: 12px; overflow: hidden;
+      border: 1.5px solid #e8ecf4; flex-shrink: 0;
+      cursor: pointer; transition: transform .2s, box-shadow .2s;
+      text-decoration: none; color: inherit;
+    }
+    .rec-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(4,56,115,0.12); }
+    .rec-card-img {
+      width: 100%; aspect-ratio: 4/3; background: #C4DEFD;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; font-size: 36px;
+    }
+    .rec-card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .rec-card-body { padding: 10px 12px; }
+    .rec-card-type { font-size: 10px; font-weight: 600; color: #7b8ab8; text-transform: uppercase; margin-bottom: 2px; }
+    .rec-card-name { font-size: 13px; font-weight: 700; color: #1e2d4a; line-height: 1.3; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rec-card-price { font-size: 13px; font-weight: 700; color: #043873; }
+    .rec-skeleton {
+      min-width: 180px; max-width: 180px; height: 160px;
+      background: linear-gradient(90deg, #e8ecf4 25%, #f4f6fa 50%, #e8ecf4 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.4s infinite;
+      border-radius: 12px; flex-shrink: 0;
+    }
+    @keyframes skeleton-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
     /* NAV */
     .site-header { background: #043873 !important; box-shadow: none; }
     .site-header .logo-text { color: #fff; }
@@ -243,6 +287,19 @@
     </div>
   </div>
 
+  <!-- RECOMMENDATIONS (visible only when logged in) -->
+  <section class="rec-section" id="recSection" style="display:none">
+    <div class="container">
+      <h2>✨ แนะนำสำหรับคุณ</h2>
+      <div class="rec-grid" id="recGrid">
+        <div class="rec-skeleton"></div>
+        <div class="rec-skeleton"></div>
+        <div class="rec-skeleton"></div>
+        <div class="rec-skeleton"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- DEVICES -->
   <section class="devices-section">
     <div class="container">
@@ -274,6 +331,10 @@
       }
 
       await loadDevices();
+
+      // Always load recommendations (personalised if logged in, popular if not)
+      logViewEvents();
+      loadRecommendations();
 
       // filter / search events
       document.querySelectorAll('.filter-tab').forEach(btn => {
@@ -457,7 +518,90 @@
     function goDevice(id) {
       const token = localStorage.getItem('access_token');
       if (!token) { window.location.href = '/features/auth/login.html?next=' + encodeURIComponent('/features/devices/rentdevice.html?id=' + id); return; }
+      logEvent(id, 'click');
       window.location.href = '/features/devices/rentdevice.html?id=' + encodeURIComponent(id);
+    }
+
+    async function logEvent(deviceNo, eventType) {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+        await fetch('/api/devices/events', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceNo: Number(deviceNo), eventType })
+        });
+      } catch(e) {}
+    }
+
+    function logViewEvents() {
+      const filtered = getFiltered();
+      filtered.slice(0, PAGE_SIZE).forEach(d => {
+        const id = d.deviceNo || d.id;
+        if (id) logEvent(id, 'view');
+      });
+    }
+
+    function buildRecCard(d) {
+      const imgUrl = parseImgUrl(d.imageUrl || '');
+      const price  = Number(d.price) === 0 ? 'ฟรี' : `${Number(d.price).toFixed(2)} บาท/วัน`;
+      const id     = d.deviceNo || d.id || '';
+      const href   = Number(d.price) === 0
+        ? '/features/management/giveout.html'
+        : `/features/devices/rentdevice.html?id=${encodeURIComponent(id)}`;
+      return `
+        <a class="rec-card" href="${href}" onclick="logEvent(${id},'click')" aria-label="${d.name}">
+          <div class="rec-card-img">
+            ${imgUrl ? `<img src="${imgUrl}" alt="${d.name}" loading="lazy" onerror="this.style.display='none'">` : '💻'}
+          </div>
+          <div class="rec-card-body">
+            ${d.type ? `<div class="rec-card-type">${d.type}</div>` : ''}
+            <div class="rec-card-name">${d.name}</div>
+            <div class="rec-card-price">${price}</div>
+          </div>
+        </a>`;
+    }
+
+    async function loadRecommendations() {
+      const section = document.getElementById('recSection');
+      const grid    = document.getElementById('recGrid');
+      const h2      = section.querySelector('h2');
+
+      try {
+        const token = localStorage.getItem('access_token');
+        let recs = [];
+        let isPersonalized = false;
+
+        // ── Personalised (logged in) ─────────────────────────────
+        if (token) {
+          try {
+            const res = await fetch('/api/recommendations', {
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+              const json = await res.json();
+              recs = Array.isArray(json.data) ? json.data : [];
+              isPersonalized = recs.length > 0;
+            }
+          } catch(e) {}
+        }
+
+        // ── Fallback: popular from public browse ─────────────────
+        if (!recs.length) {
+          const browseRes = await fetch('/api/devices/browse');
+          if (browseRes.ok) {
+            const browseJson = await browseRes.json();
+            const all = Array.isArray(browseJson.data) ? browseJson.data : [];
+            recs = all.sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 10);
+          }
+        }
+
+        if (!recs.length) { section.style.display = 'none'; return; }
+
+        if (h2) h2.textContent = isPersonalized ? '✨ แนะนำสำหรับคุณ' : '🔥 อุปกรณ์ยอดนิยม';
+        section.style.display = '';
+        grid.innerHTML = recs.map(d => buildRecCard(d)).join('');
+      } catch(e) { section.style.display = 'none'; }
     }
 
     function renderPagination(total) {

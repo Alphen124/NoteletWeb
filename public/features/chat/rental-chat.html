@@ -1088,6 +1088,9 @@ function openChat() {
 
 /* ─── WebSocket ──────────────────────────────────────────────── */
 function connectWS(room) {
+  /* Mark this room as a rental-negotiation room so the notification bell
+     can distinguish it from direct (private) chat rooms. */
+  if (room) localStorage.setItem('notelet_rental_room_' + room, '1');
   setConn('connecting', 'กำลังเชื่อมต่อ...');
   // Vercel serverless does not support WebSocket upgrades, so connect directly
   // to the Go backend. On localhost, target port 3001 directly.
@@ -1134,12 +1137,113 @@ function connectWS(room) {
 }
 
 function onHistory({ roomId, history }) {
+  const msgs = history || [];
   document.getElementById('msgFeed').innerHTML = '';
   localMsgs.length = 0;
-  // Pre-scan: check if the deal was already locked before rendering any proposal cards
-  const isLocked = (history || []).some(m => m.content === '__CONFIRMED__');
-  (history || []).forEach(m => appendMsg(m, true, isLocked));
+
+  const isConfirmed = msgs.some(m => m.content === '__CONFIRMED__');
+
+  // Scan in order: lock proposals only when the LAST relevant sentinel is an acceptance
+  // (i.e. no newer __PROPOSAL__ came after the __DATE_ACCEPTED__).
+  // This prevents locking a fresh counter-offer that arrived after a prior acceptance.
+  let lastSentinelWasAccept = false;
+  for (const m of msgs) {
+    if (m.content && m.content.startsWith('__PROPOSAL__'))      lastSentinelWasAccept = false;
+    if (m.content && m.content.startsWith('__DATE_ACCEPTED__')) lastSentinelWasAccept = true;
+  }
+  const isLocked = isConfirmed || lastSentinelWasAccept;
+
+  msgs.forEach(m => appendMsg(m, true, isLocked));
   scrollBottom();
+  if (!isConfirmed) fetchAndShowRentalPhase();
+}
+
+/* ─── Rental phase dividers (based on API status after history load) ─── */
+async function fetchAndShowRentalPhase() {
+  if (!user || !deviceId || dealConfirmed) return;
+  try {
+    let req = null;
+    // Fallback: extract requestNo from room name (dev-X-u-Y-req-Z pattern)
+    const _roomForReq = wsRoom || QP.room || '';
+    if (!requestNo) {
+      const mReq = _roomForReq.match(/req-(\d+)/);
+      if (mReq) requestNo = parseInt(mReq[1]) || 0;
+    }
+    // Try outgoing first (renter view), then incoming (owner view)
+    for (const endpoint of ['/api/rental-requests/outgoing', '/api/rental-requests/incoming']) {
+      const res = await fetch(endpoint, { headers: { 'Authorization': 'Bearer ' + user.token } });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const requests = Array.isArray(data.data) ? data.data : [];
+      // Match by requestNo using loose equality (API may return string or number)
+      if (requestNo) req = requests.find(r => Number(r.requestNo) === Number(requestNo));
+      if (!req) {
+        const devReqs = requests.filter(r => Number(r.deviceNo || r.deviceId || 0) === deviceId);
+        req = devReqs.find(r => r.status === 'Rental Active')
+           || devReqs.find(r => r.status === 'Booking Confirmed')
+           || devReqs.find(r => r.status === 'Rental Completed')
+           || null;
+      }
+      if (req) break;
+    }
+    if (!req) return;
+
+    const st = req.status;
+    if (st !== 'Booking Confirmed' && st !== 'Rental Active' && st !== 'Rental Completed') return;
+
+    // Persist resolved requestNo for later use
+    if (!requestNo && req.requestNo) requestNo = Number(req.requestNo);
+
+    // Sync left-panel dates from API if not already set
+    if (!rentalStart && req.startDate) rentalStart = String(req.startDate).slice(0, 10);
+    if (!rentalEnd   && req.endDate)   rentalEnd   = String(req.endDate).slice(0, 10);
+    if (rentalStart && rentalEnd) { updateSummary(); renderMiniCal(); }
+
+    const feed = document.getElementById('msgFeed');
+
+    // ── Retroactively lock ALL proposal card buttons in the feed ──
+    // (history rendered them with active buttons before this async call resolved)
+    feed.querySelectorAll('.sys-card .sys-actions').forEach(actDiv => {
+      actDiv.innerHTML = '<span style="font-size:12px;color:var(--muted);font-style:italic;">🔒 ปิดรับข้อเสนอแล้ว</span>';
+    });
+
+    // Lock the right-panel negotiation controls (no more propose/QR for confirmed deals)
+    lockProposals();
+
+    // If there are existing history messages, label them as negotiation history
+    if (feed.firstElementChild) {
+      const histLabel = document.createElement('div');
+      histLabel.className = 'date-div';
+      histLabel.innerHTML = `<span style="background:rgba(4,56,115,0.07);padding:3px 14px;border-radius:20px;font-size:11px;color:var(--navy);font-weight:700;">📋 ประวัติการเจรจา</span>`;
+      feed.insertBefore(histLabel, feed.firstElementChild);
+    }
+
+    // Add phase divider at the end of history
+    const phaseDiv = document.createElement('div');
+    phaseDiv.className = 'date-div';
+    if (st === 'Booking Confirmed') {
+      phaseDiv.innerHTML = `<span style="background:rgba(34,197,94,0.1);padding:4px 16px;border-radius:20px;font-size:11px;color:var(--green);font-weight:700;">✅ ยืนยันการเช่าแล้ว · แชทต่อด้านล่างได้</span>`;
+      document.getElementById('dealStatus').className = 'status-badge s2';
+      document.getElementById('dealStatus').textContent = '2️⃣ Booking Confirmed';
+      // Keep chat input open so both parties can communicate during the rental
+    } else if (st === 'Rental Active') {
+      phaseDiv.innerHTML = `<span style="background:rgba(79,156,249,0.14);padding:4px 16px;border-radius:20px;font-size:11px;color:#0a7abf;font-weight:700;">🚀 เริ่มการเช่าแล้ว · แชทระหว่างเช่า</span>`;
+      document.getElementById('dealStatus').className = 'status-badge s3';
+      document.getElementById('dealStatus').textContent = '3️⃣ Rental Active';
+      // Keep chat input open during active rental
+    } else {
+      // Rental Completed — lock entire chat and mark room as done for re-rent detection
+      phaseDiv.innerHTML = `<span style="background:rgba(34,197,94,0.1);padding:4px 16px;border-radius:20px;font-size:11px;color:var(--green);font-weight:700;">📦 การเช่าเสร็จสิ้นแล้ว</span>`;
+      document.getElementById('dealStatus').className = 'status-badge s4';
+      document.getElementById('dealStatus').textContent = '4️⃣ Rental Completed';
+      // Save room as completed so re-renting the same device opens a fresh room
+      if (deviceId && wsRoom) localStorage.setItem('notelet_completed_room_dev_' + deviceId, wsRoom);
+      dealConfirmed = true;
+      lockChat();
+    }
+    feed.appendChild(phaseDiv);
+    scrollBottom();
+  } catch(e) { /* silent fail — not critical */ }
 }
 
 function onTyping(msg) {

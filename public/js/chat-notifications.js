@@ -54,13 +54,31 @@
         return `${Math.floor(diff / 86400)} วันที่แล้ว`;
     }
     function chatLink(n) {
+        const room = n.roomName ?? '';
+        /* If rental-chat.html has ever connected to this room it stores a marker.
+           If no marker → treat as a direct (private) chat. */
+        const isRentalRoom = !!localStorage.getItem('notelet_rental_room_' + room);
+        if (isRentalRoom) {
+            const p = new URLSearchParams({
+                room: room,
+                deviceId: String(n.deviceId ?? ''),
+                deviceName: n.deviceName ?? '',
+                skipModal: '1',
+            });
+            return `/features/chat/rental-chat.html?${p.toString()}`;
+        }
+        /* Direct chat: extract the other user's ID encoded in the room name
+           (format: dev-{deviceId}-u-{userId}).  Pass as ownerUserId so
+           direct-chat.html can look up the correct paired room via the API. */
+        const m = room.match(/^dev-\d+-u-(\d+)/);
+        const otherUserId = m ? m[1] : '';
         const p = new URLSearchParams({
-            room: n.roomName ?? '',
-            deviceId: String(n.deviceId ?? ''),
-            deviceName: n.deviceName ?? '',
-            skipModal: '1',
+            deviceId:    String(n.deviceId ?? ''),
+            deviceName:  n.deviceName ?? '',
+            ownerName:   n.senderName ?? '',
+            ownerUserId: otherUserId,
         });
-        return `/features/chat/rental-chat.html?${p.toString()}`;
+        return `/features/chat/direct-chat.html?${p.toString()}`;
     }
     /* ── Styles (injected once) ─────────────────────────────────── */
     function injectStyles() {
@@ -449,6 +467,7 @@
         }
         container.innerHTML = visible.map(n => {
             const deviceKey = String(n.deviceId ?? '');
+            const isRentalRoom = !!localStorage.getItem('notelet_rental_room_' + (n.roomName ?? ''));
             return `
       <div class="_cn_item_wrap">
         <a class="_cn_item ${n.isRead ? '' : 'unread'}"
@@ -457,7 +476,7 @@
            onclick="window._cnClick(${n.notifId})">
           <div class="_cn_av">${escHtml(initials(n.senderName))}</div>
           <div class="_cn_body">
-            <div class="_cn_title">${escHtml(n.deviceName)}</div>
+            <div class="_cn_title">${isRentalRoom ? escHtml(n.deviceName) : '&#x1F4AC; แชทส่วนตัว &bull; ' + escHtml(n.deviceName)}</div>
             <div class="_cn_prev">${escHtml(n.preview ?? 'ส่งข้อความใหม่')}</div>
             <div class="_cn_time">🕐 ${timeAgo(n.createdAt)}</div>
           </div>

@@ -1,0 +1,242 @@
+﻿<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Notelet — คำขอเช่า (Admin)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/config.js"></script>
+  <script src="/js/auth.js"></script>
+  <style>
+    :root { --blue:#043873; --accent:#FFE492; --primary:#4F9CF9; }
+    body { background: #f4f6fa; font-family: 'Inter', sans-serif; }
+    .admin-header { background: var(--blue); color: #fff; padding: 0; box-shadow: 0 2px 8px rgba(2,10,22,0.15); position: sticky; top: 0; z-index: 50; }
+    .admin-header-inner { max-width: 1400px; margin: 0 auto; padding: 0 24px; height: 72px; display: flex; align-items: center; justify-content: space-between; }
+    .admin-brand { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+    .admin-logo-mark { width: 46px; height: 46px; background-image: url('/logo.png'); background-size: cover; background-position: center; border-radius: 10px; }
+    .admin-logo-text { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: .6px; }
+    .admin-badge { background: var(--accent); color: var(--blue); font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: .6px; }
+    .admin-user-info { display: flex; align-items: center; gap: 14px; }
+    .admin-email { font-size: 13px; color: rgba(255,255,255,.75); }
+    .btn-logout { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s; }
+    .btn-logout:hover { background: rgba(255,255,255,.2); }
+    .admin-nav { background: #032d5c; border-top: 1px solid rgba(255,255,255,.08); }
+    .admin-nav-inner { max-width: 1400px; margin: 0 auto; padding: 0 24px; display: flex; gap: 0; }
+    .admin-nav a { color: rgba(255,255,255,.65); text-decoration: none; padding: 13px 20px; font-size: 14px; font-weight: 500; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s; white-space: nowrap; }
+    .admin-nav a:hover { color: #fff; border-bottom-color: var(--primary); }
+    .admin-nav a.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+    .admin-content { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+    .page-title { font-size: 26px; font-weight: 800; color: #0d1b2e; margin: 0 0 4px; }
+    .page-sub { color: #6b7a99; font-size: 14px; margin: 0 0 24px; }
+    .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+    .search-box { flex: 1; min-width: 200px; padding: 10px 16px; border: 1.5px solid #dbe4f5; border-radius: 10px; font-size: 14px; outline: none; transition: border-color .15s; background: #fff; }
+    .search-box:focus { border-color: var(--primary); }
+    .filter-select { padding: 10px 14px; border: 1.5px solid #dbe4f5; border-radius: 10px; font-size: 14px; outline: none; background: #fff; cursor: pointer; }
+    .table-wrap { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(4,56,115,0.08); overflow: auto; border: 1.5px solid #e4edfc; }
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    thead th { background: #f0f6ff; padding: 13px 14px; text-align: left; font-size: 11px; font-weight: 700; color: #4a6fa8; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1.5px solid #dbe4f5; }
+    tbody tr { border-bottom: 1px solid #f0f6ff; transition: background .1s; }
+    tbody tr:hover { background: #f5f9ff; }
+    tbody td { padding: 11px 14px; font-size: 13px; color: #1e293b; vertical-align: middle; }
+    .status-chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: .2px; white-space: nowrap; }
+    .s-pending   { background: #fef3c7; color: #92400e; }
+    .s-confirmed { background: #d1fae5; color: #065f46; }
+    .s-active    { background: #dbeafe; color: #1e40af; }
+    .s-returned  { background: #e0edff; color: #043873; }
+    .s-rejected  { background: #fee2e2; color: #991b1b; }
+    .s-cancelled { background: #f3f4f6; color: #374151; }
+    .s-other     { background: #f0f6ff; color: #043873; }
+    .btn-sm { padding: 5px 11px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; transition: opacity .15s; white-space: nowrap; }
+    .btn-sm:hover { opacity: .82; }
+    .btn-status-edit { background: #f59e0b; color: #fff; }
+    /* Status dropdown inline */
+    .status-select { padding: 5px 10px; border: 1.5px solid #dbe4f5; border-radius: 8px; font-size: 12px; outline: none; background: #fff; cursor: pointer; }
+    .status-select:focus { border-color: var(--primary); }
+    #loadingOverlay { position: fixed; inset: 0; background: rgba(255,255,255,.92); display: flex; align-items: center; justify-content: center; z-index: 9999; font-size: 16px; color: #6b7a99; }
+    .loading-dot { animation: blink 1.2s infinite; }
+    @keyframes blink { 0%,100%{opacity:.3} 50%{opacity:1} }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--blue); color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 9999; opacity: 0; transform: translateY(10px); transition: opacity .25s, transform .25s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .count-badge { font-size: 13px; color: #6b7a99; margin-left: 8px; font-weight: 500; }
+  </style>
+</head>
+<body>
+<div id="loadingOverlay"><span class="loading-dot">กำลังโหลด...</span></div>
+<div class="toast" id="toast"></div>
+
+<header class="admin-header">
+  <div class="admin-header-inner">
+    <a class="admin-brand" href="/features/management/admin-dashboard.html">
+      <div class="admin-logo-mark"></div>
+      <span class="admin-logo-text">NOTELET</span>
+      <span class="admin-badge">ADMIN</span>
+    </a>
+    <div class="admin-user-info">
+      <span class="admin-email" id="adminEmail">—</span>
+      <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
+    </div>
+  </div>
+</header>
+<nav class="admin-nav">
+  <div class="admin-nav-inner">
+    <a href="/features/management/admin-dashboard.html">📊 ภาพรวม</a>
+    <a href="/features/management/admin-users.html">👥 จัดการผู้ใช้</a>
+    <a href="/features/management/admin-devices.html">🖥️ จัดการอุปกรณ์</a>
+    <a href="/features/management/admin-rentals.html" class="active">📋 คำขอเช่า</a>
+    <a href="/index.html">← กลับหน้าหลัก</a>
+  </div>
+</nav>
+
+<main class="admin-content">
+  <h1 class="page-title">คำขอเช่าทั้งหมด <span class="count-badge" id="totalCount"></span></h1>
+  <p class="page-sub">ดูและจัดการสถานะคำขอเช่าอุปกรณ์ทุกรายการในระบบ</p>
+
+  <div class="toolbar">
+    <input type="text" class="search-box" id="searchInput" placeholder="ค้นหาอุปกรณ์ ผู้เช่า หรืออีเมล..." oninput="renderTable()">
+    <select class="filter-select" id="statusFilter" onchange="renderTable()">
+      <option value="">ทุกสถานะ</option>
+      <option value="Request Pending">Request Pending</option>
+      <option value="Confirmed">Confirmed</option>
+      <option value="Active">Active</option>
+      <option value="Returned">Returned</option>
+      <option value="Rejected">Rejected</option>
+      <option value="Cancelled">Cancelled</option>
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>อุปกรณ์</th>
+          <th>ผู้เช่า</th>
+          <th>เจ้าของ</th>
+          <th>วันเช่า</th>
+          <th>ราคา</th>
+          <th>สถานะ</th>
+          <th>สร้างเมื่อ</th>
+          <th>แก้ไขสถานะ</th>
+        </tr>
+      </thead>
+      <tbody id="rentalsBody">
+        <tr><td colspan="9" style="text-align:center;padding:40px;color:#94a3b8;">กำลังโหลด...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+let allRentals = [];
+
+(async function init() {
+  if (!isAuthenticated()) { window.location.href = '/features/auth/login.html'; return; }
+  const user = getUserData();
+  if (!user?.is_admin) { alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้'); window.location.href = '/index.html'; return; }
+  document.getElementById('adminEmail').textContent = user.email || '—';
+  document.getElementById('loadingOverlay').style.display = 'none';
+  await loadRentals();
+})();
+
+async function loadRentals() {
+  try {
+    const res = await apiRequest('/api/admin/rentals');
+    allRentals = res.data ?? [];
+    renderTable();
+  } catch {
+    document.getElementById('rentalsBody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;color:#ef4444;padding:40px;">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+  }
+}
+
+function renderTable() {
+  const q      = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+
+  const filtered = allRentals.filter(r => {
+    const matchQ = !q ||
+      r.device_name.toLowerCase().includes(q) ||
+      r.renter_name.toLowerCase().includes(q) ||
+      r.renter_email.toLowerCase().includes(q) ||
+      r.owner_email.toLowerCase().includes(q);
+    const matchS = !status || r.status === status;
+    return matchQ && matchS;
+  });
+
+  document.getElementById('totalCount').textContent = `(${filtered.length} รายการ)`;
+
+  if (!filtered.length) {
+    document.getElementById('rentalsBody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;padding:32px;color:#94a3b8;">ไม่พบคำขอ</td></tr>';
+    return;
+  }
+
+  document.getElementById('rentalsBody').innerHTML = filtered.map(r => {
+    const statusClass = {
+      'Request Pending': 's-pending',
+      'Confirmed':       's-confirmed',
+      'Active':          's-active',
+      'Returned':        's-returned',
+      'Rejected':        's-rejected',
+      'Cancelled':       's-cancelled',
+    }[r.status] ?? 's-other';
+
+    const price = r.total_price > 0 ? `฿${Number(r.total_price).toLocaleString()}` : 'ฟรี';
+
+    const statusOptions = ['Request Pending','Confirmed','Active','Returned','Rejected','Cancelled']
+      .map(s => `<option value="${escHtml(s)}"${s === r.status ? ' selected' : ''}>${escHtml(s)}</option>`)
+      .join('');
+
+    return `<tr>
+      <td style="color:#6b7a99;font-size:12px">#${r.request_no}</td>
+      <td>
+        <strong>${escHtml(r.device_name)}</strong>
+        <br><small style="color:#94a3b8">ID: ${r.device_no}</small>
+      </td>
+      <td>
+        <span style="font-weight:600">${escHtml(r.renter_name)}</span>
+        <br><small style="color:#4F9CF9">${escHtml(r.renter_email)}</small>
+      </td>
+      <td><small style="color:#6b7a99">${escHtml(r.owner_email)}</small></td>
+      <td style="font-size:12px;color:#374151">
+        ${escHtml(r.start_date)}<br>→ ${escHtml(r.end_date)}
+      </td>
+      <td style="font-weight:600">${price}</td>
+      <td><span class="status-chip ${statusClass}">${escHtml(r.status)}</span></td>
+      <td style="color:#6b7a99;font-size:12px">${r.created_at ?? '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select class="status-select" id="sel_${r.request_no}">${statusOptions}</select>
+          <button class="btn-sm btn-status-edit" onclick="updateStatus(${r.request_no})">บันทึก</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function updateStatus(requestNo) {
+  const sel    = document.getElementById(`sel_${requestNo}`);
+  const status = sel?.value;
+  if (!status) return;
+  try {
+    await apiRequest(`/api/admin/rentals/${requestNo}/status`, {
+      method: 'PATCH', body: JSON.stringify({ status })
+    });
+    showToast(`อัปเดตสถานะเป็น "${status}" สำเร็จ`);
+    await loadRentals();
+  } catch { showToast('เกิดข้อผิดพลาด', true); }
+}
+
+function showToast(msg, isErr = false) {
+  const t = document.getElementById('toast');
+  t.textContent    = msg;
+  t.style.background = isErr ? '#ef4444' : '#043873';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function escHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function logout()   { clearAuthData(); window.location.href = '/features/auth/login.html'; }
+</script>
+</body>
+</html>

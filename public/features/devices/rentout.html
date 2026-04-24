@@ -91,6 +91,8 @@
     .btn-returned-req:hover { background:#2563eb; }
     .btn-cancel-req { flex:1; padding:9px 12px; background:#fff; color:#6b7280; border:1.5px solid #9ca3af; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; }
     .btn-cancel-req:hover { background:#f3f4f6; }
+    .btn-open-chat { width:100%; padding:9px 12px; background:#f0f9ff; color:#0369a1; border:1.5px solid #bae6fd; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; }
+    .btn-open-chat:hover { background:#e0f2fe; border-color:#7dd3fc; }
     .btn-user-review-req {
       flex:1; padding:9px 12px; background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; border:none;
       border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:opacity .2s;
@@ -106,6 +108,70 @@
       font-weight:600; cursor:pointer; transition:all .2s; white-space:nowrap;
     }
     .btn-view-renter-profile:hover { background:#dbeafe; border-color:#93c5fd; }
+
+    /* ── Owner Chat Contact Cards ───────────────────────────────── */
+    .owner-chat-section { margin-top:28px; }
+    .owner-chat-section-title {
+      font-size:15px; font-weight:700; color:#043873;
+      margin-bottom:14px; padding-bottom:8px;
+      border-bottom:2px solid #e8ecf4;
+    }
+    .owner-chat-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+      gap:14px;
+    }
+    .owner-chat-card {
+      display:flex; align-items:center; gap:12px;
+      background:#fff; border-radius:12px;
+      border:1.5px solid #e8ecf4;
+      box-shadow:0 2px 8px rgba(4,56,115,.07);
+      padding:14px 16px;
+      transition:border-color .18s, box-shadow .18s;
+    }
+    .owner-chat-card:hover { border-color:#93c5fd; box-shadow:0 4px 16px rgba(4,56,115,.12); }
+    .owner-chat-av {
+      width:42px; height:42px; border-radius:50%; flex-shrink:0;
+      background:linear-gradient(135deg,#043873,#0a5ba8);
+      display:flex; align-items:center; justify-content:center;
+      font-size:16px; font-weight:700; color:#fff;
+    }
+    .owner-chat-info { flex:1; min-width:0; }
+    .owner-chat-name { font-size:13px; font-weight:700; color:#1e2d4a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .owner-chat-device { font-size:11px; color:#7b8ab8; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .owner-chat-btn {
+      flex-shrink:0; padding:7px 14px;
+      background:linear-gradient(135deg,#043873,#0a5ba8); color:#fff;
+      border:none; border-radius:8px; font-size:12px; font-weight:600;
+      cursor:pointer; transition:opacity .18s;
+    }
+    .owner-chat-btn:hover { opacity:.85; }
+    .owner-chat-btn.private {
+      background:linear-gradient(135deg,#15803d,#22c55e);
+    }
+    .owner-chat-btn[disabled] {
+      background:#d1d5db; color:#9ca3af; cursor:not-allowed; opacity:1;
+    }
+    .owner-chat-btns { display:flex; gap:6px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+    .chat-section-split { margin-top:28px; }
+    .chat-section-split-title {
+      font-size:13px; font-weight:700; color:#043873;
+      margin-bottom:10px; padding-bottom:6px;
+      border-bottom:1.5px solid #e8ecf4;
+      display:flex; align-items:center; gap:6px;
+    }
+    .chat-tag-req {
+      display:inline-block; background:#dbeafe; color:#1d4ed8;
+      font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
+    }
+    .chat-tag-private {
+      display:inline-block; background:#dcfce7; color:#15803d;
+      font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
+    }
+    .chat-tag-closed {
+      display:inline-block; background:#f3f4f6; color:#9ca3af;
+      font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
+    }
 
     /* ── Renter Profile Modal ────────────────────────────────────── */
     .rp-overlay {
@@ -369,6 +435,105 @@
     .dash-alert-text { flex:1; color:#374151; line-height:1.45; }
     .dash-alert-text strong { color:#1e2d4a; }
     .dash-alerts-title { font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; }
+
+    /* ── User Review Modal (new style) ─────────────────────────── */
+    #userReviewOverlay .review-modal {
+      max-width: 520px;
+      padding: 28px 28px 24px;
+      border-radius: 16px;
+    }
+    #userReviewOverlay .review-modal h3 {
+      font-size: 17px; font-weight: 700; margin: 0 0 16px; color: #111;
+    }
+    #userReviewOverlay .review-body { gap: 0; }
+    #userReviewOverlay .review-lessee.header {
+      background: #f8faff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    #userReviewOverlay .review-avatar {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg,#93c5fd,#3b82f6);
+      border-radius: 50%;
+    }
+    #userReviewOverlay .review-lessee-name { font-size: 15px; font-weight: 700; color: #1e293b; }
+    .ur-write-scroll {
+      max-height: 58vh;
+      overflow-y: auto;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .sub-rating-section {
+      background: #f8faff;
+      border: 1px solid #e2eaf8;
+      border-radius: 12px;
+      padding: 12px 14px 8px;
+      margin-bottom: 10px;
+    }
+    .sub-rating-section-title {
+      font-size: 13px; font-weight: 700; color: #2563eb;
+      letter-spacing: .3px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sub-rating-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #eef2fb;
+    }
+    .sub-rating-row:last-child { border-bottom: none; }
+    .sub-rating-label {
+      font-size: 13px; color: #374151; font-weight: 500;
+      flex-shrink: 0; min-width: 110px;
+    }
+    .sub-rating-label .req { color: #ef4444; }
+    .sub-rating-row .review-stars {
+      font-size: 20px !important;
+      gap: 2px !important;
+    }
+    .sub-rating-row .review-stars .star {
+      font-size: 20px;
+      padding: 0;
+      line-height: 1;
+      transition: transform .1s, color .1s;
+    }
+    .sub-rating-row .review-stars .star:hover { transform: scale(1.25); color: #f59e0b; }
+    .sub-rating-row .review-stars .star.active { color: #f59e0b; }
+    .sub-stars { display: flex; gap: 2px; }
+    .sub-star {
+      background: none !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      color: #d1d5db;
+      transition: color .1s, transform .1s;
+    }
+    .sub-stars:hover .sub-star { color: #fbbf24; }
+    .sub-stars .sub-star:hover ~ .sub-star { color: #d1d5db; }
+    .sub-star.active { color: #f59e0b; }
+    #userReviewOverlay .review-label {
+      font-size: 13px; font-weight: 600; color: #374151;
+      margin: 4px 0 5px;
+    }
+    #userReviewOverlay textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid #e2eaf8; border-radius: 8px;
+      font-size: 13px; color: #374151; resize: vertical;
+      min-height: 68px; box-sizing: border-box;
+      background: #fafcff;
+      transition: border-color .15s;
+    }
+    #userReviewOverlay textarea:focus { outline: none; border-color: #93c5fd; background: #fff; }
+    #userReviewOverlay .modal-actions {
+      margin-top: 16px; display: flex; gap: 10px; justify-content: flex-end;
+    }
   </style>
 </head>
 <body>
@@ -489,7 +654,7 @@
       <!-- Tabs -->
       <div class="page-tabs">
         <button class="page-tab active" data-tab="mydevices"> อุปกรณ์ของฉัน</button>
-        <button class="page-tab" data-tab="incoming"> แชทที่เข้ามา <span class="badge" id="incomingBadge" style="display:none">0</span></button>
+        <button class="page-tab" data-tab="incoming"> ประวัติแชท <span class="badge" id="incomingBadge" style="display:none">0</span></button>
         <button class="page-tab" data-tab="outgoing"> คำขอที่ส่งไป</button>
       </div>
 
@@ -503,6 +668,22 @@
           </div>
         </div>
       </section>
+
+      <!-- Chat inbox on My Devices tab -->
+      <div style="margin-top:28px;">
+        <div class="chat-section-split">
+          <div class="chat-section-split-title">&#x1F4CB; แชทคำขอเช่า <span class="chat-tag-req">REQUEST</span></div>
+          <div id="chatInboxMain">
+            <div class="req-empty"><div class="icon">&#x23F3;</div><p>กำลังโหลด...</p></div>
+          </div>
+        </div>
+        <div class="chat-section-split" style="margin-top:20px;">
+          <div class="chat-section-split-title">&#x1F4AC; แชทส่วนตัว <span class="chat-tag-private">PRIVATE</span></div>
+          <div id="directChatInboxMain">
+            <div class="req-empty"><div class="icon">&#x23F3;</div><p>กำลังโหลด...</p></div>
+          </div>
+        </div>
+      </div>
       </div><!-- /tab-pane#mydevices -->
 
       <!-- Tab: Incoming (Requests + Chats) -->
@@ -513,9 +694,17 @@
           <div class="req-empty"><div class="icon">⏳</div><p>กำลังโหลด...</p></div>
         </div>
         <!-- Incoming Chats -->
-        <h3 style="font-size:15px;font-weight:700;color:#043873;margin:28px 0 14px;padding-bottom:8px;border-bottom:2px solid #e8ecf4;">💬 แชทที่เข้ามา</h3>
-        <div id="chatInboxContainer">
-          <div class="req-empty"><div class="icon">⏳</div><p>กำลังโหลด...</p></div>
+        <div class="chat-section-split" style="margin-top:28px;">
+          <div class="chat-section-split-title">&#x1F4CB; แชทคำขอเช่า <span class="chat-tag-req">REQUEST</span></div>
+          <div id="chatInboxContainer">
+            <div class="req-empty"><div class="icon">⏳</div><p>กำลังโหลด...</p></div>
+          </div>
+        </div>
+        <div class="chat-section-split" style="margin-top:20px;">
+          <div class="chat-section-split-title">&#x1F4AC; แชทส่วนตัว <span class="chat-tag-private">PRIVATE</span></div>
+          <div id="directChatInboxContainer">
+            <div class="req-empty"><div class="icon">⏳</div><p>กำลังโหลด...</p></div>
+          </div>
         </div>
       </div>
 
@@ -524,6 +713,7 @@
         <div class="request-grid" id="outgoingGrid">
           <div class="req-empty"><div class="icon">⏳</div><p>กำลังโหลด...</p></div>
         </div>
+        <div id="ownerChatSection"></div>
       </div>
 
       <!-- Review Modal (history + write views) -->
@@ -722,19 +912,33 @@
       }
       firstImageUrl = (() => { const u = firstImageUrl; if(/^https?:\/\//.test(u)) return u.replace(/^https?:\/\/[^/]+(\/uploads\/.*)$/,'$1')||u; if(u.startsWith('/uploads/')) return u; if(u.startsWith('uploads/')) return '/'+u; return '/uploads/'+u; })();
 
+      const specParts = [
+        device.cpu   ? `🖥️ ${escapeHtml(device.cpu)}`   : '',
+        device.ram   ? `💾 ${escapeHtml(device.ram)}`   : '',
+        device.storage ? `💿 ${escapeHtml(device.storage)}` : '',
+        device.gpu   ? `🎮 ${escapeHtml(device.gpu)}`   : '',
+      ].filter(Boolean);
+      const addedDate = device.createdAt
+        ? new Date(device.createdAt).toLocaleDateString('th-TH', {year:'numeric',month:'short',day:'numeric'})
+        : 'เมื่อเร็วๆ นี้';
+      const ratingStars = Number(device.rating || 0);
+      const starsHtml = '★'.repeat(Math.round(ratingStars)) + '☆'.repeat(5 - Math.round(ratingStars));
+
       article.innerHTML = `
         <div class="card-media-large" aria-hidden ${firstImageUrl ? `style="background-image:url('${firstImageUrl}'); background-size:cover;"` : ''}></div>
         <div class="card-content">
-          <h3 class="device-name">${escapeHtml(device.name)}</h3>
-          <div class="meta small">ประเภท · ${escapeHtml(device.type || 'อุปกรณ์')}</div>
-          <div class="meta small">ราคา · $${device.price}/วัน</div>
-          ${device.cpu ? `<div class="meta small">CPU · ${escapeHtml(device.cpu)}</div>` : ''}
-          ${device.ram ? `<div class="meta small">RAM · ${escapeHtml(device.ram)}</div>` : ''}
-          ${device.storage ? `<div class="meta small">Storage · ${escapeHtml(device.storage)}</div>` : ''}
-          ${device.gpu ? `<div class="meta small">GPU · ${escapeHtml(device.gpu)}</div>` : ''}
-          <div class="meta small">คะแนน · ${device.rating || 0} ⭐</div>
-          <div class="meta small status-row">สถานะ · ${statusBadge}</div>
-          <div class="meta small">เพิ่มเมื่อ · ${device.createdAt ? new Date(device.createdAt).toLocaleDateString() : 'เมื่อเร็วๆ นี้'}</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+            <h3 class="device-name" style="margin:0;font-size:15px;font-weight:700;color:#1e2d4a;flex:1;">${escapeHtml(device.name)}</h3>
+            ${statusBadge}
+          </div>
+          <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">📦 ${escapeHtml(device.type || 'อุปกรณ์')}</div>
+          <div style="font-size:16px;font-weight:700;color:#043873;margin-bottom:8px;">฿${Number(device.price).toLocaleString()}<span style="font-size:12px;font-weight:400;color:#6b7280;"> /วัน</span></div>
+          ${specParts.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">${specParts.map(s=>`<span style="font-size:11px;background:#f0f4ff;color:#3b5998;border-radius:6px;padding:2px 8px;">${s}</span>`).join('')}</div>` : ''}
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <span style="color:#FFC000;font-size:14px;letter-spacing:1px;">${starsHtml}</span>
+            <span style="font-size:11px;color:#9ca3af;">${ratingStars > 0 ? ratingStars.toFixed(1) : 'ยังไม่มีรีวิว'}</span>
+          </div>
+          <div style="font-size:11px;color:#b0b8c8;margin-bottom:10px;">📅 เพิ่มเมื่อ ${addedDate}</div>
           ${statusButtons}
         </div>
       `;
@@ -1070,6 +1274,8 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadMyDevices();
       loadRentDashboard();
+      // Load chat inbox on My Devices tab immediately
+      loadChatRooms();
       // Pre-load badge count for unread chat notifications
       loadIncomingBadge();
       // Auto-open chats tab if URL param says so
@@ -1143,11 +1349,16 @@
     }
 
     // ── Chat Inbox ─────────────────────────────────────────────────
+    // Room name patterns:
+    //   Request chat  → contains "-req-"  (tied to a rental request)
+    //   Private chat  → does NOT contain "-req-" (direct personal channel)
     async function loadChatRooms() {
       const token = localStorage.getItem('access_token');
-      const container = document.getElementById('chatInboxContainer');
-      if (!container) return;
-      container.innerHTML = '<div class="req-empty"><div class="icon">⏳</div><p>กำลังโหลด...</p></div>';
+      const reqContainers  = [document.getElementById('chatInboxContainer'), document.getElementById('chatInboxMain')];
+      const privContainers = [document.getElementById('directChatInboxContainer'), document.getElementById('directChatInboxMain')];
+      const loading = '<div class="req-empty"><div class="icon">⏳</div><p>กำลังโหลด...</p></div>';
+      reqContainers.forEach(c  => { if (c) c.innerHTML = loading; });
+      privContainers.forEach(c => { if (c) c.innerHTML = loading; });
       try {
         const res = await fetch('/api/chat/owner-rooms', {
           headers: { 'Authorization': 'Bearer ' + token }
@@ -1155,33 +1366,38 @@
         const result = await res.json();
         let rooms = Array.isArray(result.data) ? result.data : [];
 
-        // Dedup: one card per device — keep the one with the latest lastMessageAt
-        const byDevice = new Map();
+        // Dedup per room name (keep latest lastMessageAt)
+        const byRoom = new Map();
         rooms.forEach(r => {
-          const id = String(r.deviceId);
-          const existing = byDevice.get(id);
-          if (!existing || (r.lastMessageAt || '') > (existing.lastMessageAt || '')) {
-            byDevice.set(id, r);
-          }
+          const key = String(r.roomName);
+          const existing = byRoom.get(key);
+          if (!existing || (r.lastMessageAt || '') > (existing.lastMessageAt || '')) byRoom.set(key, r);
         });
-        rooms = [...byDevice.values()];
+        rooms = [...byRoom.values()];
 
-        // Filter dismissed (skip if room has unread messages that arrived after dismiss)
+        // Filter dismissed
         const dismissed = getCrDismissed();
         rooms = rooms.filter(r => {
-          const dis = dismissed[String(r.deviceId)];
+          const dis = dismissed[String(r.deviceId) + '_' + String(r.roomName)];
           if (!dis) return true;
-          // Re-show if there are unread messages newer than dismiss time
           if ((r.unreadCount || 0) > 0 && r.lastMessageAt && new Date(r.lastMessageAt).getTime() > dis.at) return true;
           return false;
         });
 
-        if (rooms.length === 0) {
-          container.innerHTML = '<div class="req-empty"><div class="icon">💬</div><p>ยังไม่มีแชทเข้ามา</p></div>';
-          return;
-        }
-        container.innerHTML = '<div class="chat-inbox">' + rooms.map(renderChatRoomItem).join('') + '</div>';
-        // Update badge
+        // Split by type: request rooms contain "-req-" in their name
+        const reqRooms  = rooms.filter(r => String(r.roomName).includes('-req-'));
+        const privRooms = rooms.filter(r => !String(r.roomName).includes('-req-'));
+
+        const emptyReq  = '<div class="req-empty"><div class="icon">📋</div><p>ยังไม่มีแชทคำขอ</p></div>';
+        const emptyPriv = '<div class="req-empty"><div class="icon">💬</div><p>ยังไม่มีแชทส่วนตัว</p></div>';
+
+        const reqHtml  = reqRooms.length  > 0 ? '<div class="chat-inbox">' + reqRooms.map(renderChatRoomItem).join('') + '</div>'  : emptyReq;
+        const privHtml = privRooms.length > 0 ? '<div class="chat-inbox">' + privRooms.map(r => renderChatRoomItem(r, true)).join('') + '</div>' : emptyPriv;
+
+        reqContainers.forEach(c  => { if (c) c.innerHTML = reqHtml; });
+        privContainers.forEach(c => { if (c) c.innerHTML = privHtml; });
+
+        // Update badge (all unread combined)
         const totalUnread = rooms.reduce((s, r) => s + (r.unreadCount || 0), 0);
         const badge = document.getElementById('incomingBadge');
         if (badge) {
@@ -1189,14 +1405,20 @@
           else { badge.style.display = 'none'; }
         }
       } catch(e) {
-        container.innerHTML = '<div class="req-empty"><div class="icon">⚠️</div><p>โหลดข้อมูลไม่ได้</p></div>';
+        const errHtml = '<div class="req-empty"><div class="icon">⚠️</div><p>โหลดข้อมูลไม่ได้</p></div>';
+        reqContainers.forEach(c  => { if (c) c.innerHTML = errHtml; });
+        privContainers.forEach(c => { if (c) c.innerHTML = errHtml; });
       }
     }
 
-    function renderChatRoomItem(room) {
-      // Extract renterId from room name pattern: dev-{deviceId}-u-{renterId}
+    function renderChatRoomItem(room, isPrivate) {
+      // Extract renterId and requestNo from room name patterns:
+      //   Request room: dev-{deviceId}-u-{renterId}-req-{requestNo}
+      //   Private room: dev-{deviceId}-u-{renterId}
       const m = String(room.roomName).match(/dev-\d+-u-(\d+)/);
       const renterId = m ? m[1] : '';
+      const mReq = String(room.roomName).match(/-req-(\d+)/);
+      const reqNo = mReq ? mReq[1] : '';
       const initial = room.lastSenderName ? room.lastSenderName.charAt(0).toUpperCase() : '?';
       const time = room.lastMessageAt ? formatChatTime(new Date(room.lastMessageAt)) : '';
       const isUnread = (room.unreadCount || 0) > 0;
@@ -1224,9 +1446,19 @@
 
       const priceText = room.rentPrice ? '฿' + Number(room.rentPrice).toFixed(0) + '/วัน' : '';
 
-      const chatUrl = '/features/chat/rental-chat.html?room=' + encodeURIComponent(room.roomName)
-        + '&deviceId=' + encodeURIComponent(room.deviceId)
-        + (renterId ? '&renterId=' + encodeURIComponent(renterId) : '');
+      // Private rooms → direct-chat.html; Request rooms → rental-chat.html with requestNo
+      let chatUrl;
+      if (isPrivate) {
+        chatUrl = '/features/chat/direct-chat.html?room=' + encodeURIComponent(room.roomName)
+          + '&deviceId=' + encodeURIComponent(room.deviceId)
+          + '&deviceName=' + encodeURIComponent(room.deviceName || 'อุปกรณ์')
+          + (renterId ? '&renterId=' + encodeURIComponent(renterId) : '');
+      } else {
+        chatUrl = '/features/chat/rental-chat.html?room=' + encodeURIComponent(room.roomName)
+          + '&deviceId=' + encodeURIComponent(room.deviceId)
+          + (renterId ? '&renterId=' + encodeURIComponent(renterId) : '')
+          + (reqNo    ? '&requestNo=' + encodeURIComponent(reqNo)    : '');
+      }
 
       return '<div class="cr-card-wrap" data-device-id="' + escapeHtml(String(room.deviceId)) + '">'
         + '<button class="cr-dismiss-btn" onclick="dismissChatRoom(event,\'' + escapeHtml(room.roomName) + '\',\'' + escapeHtml(String(room.deviceId)) + '\')" title="ปิด">×</button>'
@@ -1297,9 +1529,96 @@
         grid.innerHTML = requests.length === 0
           ? '<div class="req-empty"><div class="icon">📬</div><p>ยังไม่มีคำขอที่ส่งออกไป</p></div>'
           : requests.map(r => renderRequestCard(r, 'outgoing')).join('');
+        // Render owner chat contacts section
+        renderOwnerChatSection(requests);
       } catch(e) {
         grid.innerHTML = '<div class="req-empty"><div class="icon">⚠️</div><p>โหลดข้อมูลไม่ได้</p></div>';
       }
+    }
+
+    function renderOwnerChatSection(requests) {
+      const section = document.getElementById('ownerChatSection');
+      if (!section) return;
+      // Collect unique owner-device pairs (by deviceNo) — keep most active request
+      const byDev = new Map();
+      requests.forEach(r => {
+        const key = String(r.deviceNo);
+        const ex  = byDev.get(key);
+        if (!ex) { byDev.set(key, r); }
+        else {
+          const priority = ['Rental Active','Booking Confirmed','Request Pending'];
+          const rPrio  = priority.indexOf(r.status);
+          const exPrio = priority.indexOf(ex.status);
+          if (rPrio !== -1 && (exPrio === -1 || rPrio < exPrio)) byDev.set(key, r);
+        }
+      });
+      const contacts = [...byDev.values()];
+      if (contacts.length === 0) { section.innerHTML = ''; return; }
+      const closedStatuses = new Set(['Rental Completed','rejected','cancelled']);
+      section.innerHTML = '<div class="owner-chat-section">'
+        + '<div class="owner-chat-section-title">💬 ติดต่อเจ้าของอุปกรณ์</div>'
+        + '<div class="owner-chat-grid">'
+        + contacts.map(r => {
+            const ownerName  = escapeHtml(r.ownerName || r.ownerEmail || 'เจ้าของ');
+            const devName    = escapeHtml(r.deviceName || 'อุปกรณ์');
+            const initial    = ownerName.charAt(0).toUpperCase();
+            const isClosed   = closedStatuses.has(r.status);
+            const ownerUid   = Number(r.ownerUserId || 0);
+            const reqLabel   = isClosed ? '📋 คำขอ (ปิดแล้ว)' : '📋 แชทคำขอ';
+            const reqDis     = isClosed ? ' disabled' : '';
+            const closedTag  = isClosed ? ' <span class="chat-tag-closed">ปิด</span>' : '';
+            return '<div class="owner-chat-card">'
+              + '<div class="owner-chat-av">' + initial + '</div>'
+              + '<div class="owner-chat-info">'
+              + '<div class="owner-chat-name">' + ownerName + '</div>'
+              + '<div class="owner-chat-device">📦 ' + devName + closedTag + '</div>'
+              + '</div>'
+              + '<div class="owner-chat-btns">'
+              + '<button class="owner-chat-btn"' + reqDis + ' onclick="startRentalChat(' + Number(r.deviceNo) + ',\'' + devName.replace(/'/g,"&#x27;") + '\',' + Number(r.requestNo||0) + ')">' + reqLabel + '</button>'
+              + '<button class="owner-chat-btn private" onclick="startDirectChat(' + ownerUid + ',\'' + ownerName.replace(/'/g,"&#x27;") + '\',' + Number(r.deviceNo) + ',\'' + devName.replace(/'/g,"&#x27;") + '\')">💬 แชทส่วนตัว</button>'
+              + '</div>'
+              + '</div>';
+          }).join('')
+        + '</div></div>';
+    }
+
+    function startDirectChat(ownerUserId, ownerName, devId, devName) {
+      const p = new URLSearchParams({
+        deviceId:    devId    || '',
+        deviceName:  devName  || 'อุปกรณ์',
+        ownerName:   ownerName || 'ผู้ปล่อยเช่า',
+        ownerUserId: ownerUserId || 0,
+      });
+      window.open('/features/chat/direct-chat.html?' + p.toString(), '_blank');
+    }
+
+    async function startRentalChat(devId, devName, requestNo) {
+      const token = localStorage.getItem('access_token');
+      let room = '';
+      // 1. Check localStorage first (saved by rentdevice.html when the rental was first opened)
+      try {
+        const stored = localStorage.getItem('chat_room_' + devId);
+        if (stored) { const d = JSON.parse(stored); room = d.roomName || ''; }
+      } catch {}
+      // 2. If not in localStorage, ask the backend (pass requestNo so backend finds the correct room)
+      if (!room) {
+        try {
+          const res = await fetch('/api/chat/device-room', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ deviceId: devId, ...(requestNo ? { requestNo } : {}) }),
+          });
+          if (res.ok) { const d = await res.json(); room = d.roomName || ''; }
+        } catch {}
+      }
+      const p = new URLSearchParams({
+        deviceId:   devId,
+        deviceName: devName,
+        skipModal:  '1',
+        ...(room ? { room } : {}),
+        ...(requestNo ? { requestNo } : {}),
+      });
+      window.open('/features/chat/rental-chat.html?' + p.toString(), '_blank');
     }
 
     function renderRequestCard(r, mode) {
@@ -1311,7 +1630,12 @@
       const status = r.status || 'Request Pending';
       const statusCls = { 'Request Pending':'request-pending', 'Booking Confirmed':'booking-confirmed', 'Rental Active':'rental-active', 'Rental Completed':'rental-completed', rejected:'rejected', cancelled:'cancelled' };
       const statusLabel = { 'Request Pending':'รอการยืนยัน', 'Booking Confirmed':'ยืนยันแล้ว', 'Rental Active':'กำลังเช่า', 'Rental Completed':'เสร็จสิ้น', rejected:'ปฏิเสธแล้ว', cancelled:'ยกเลิกแล้ว' };
+      const statusColors = { 'Request Pending':'#f59e0b', 'Booking Confirmed':'#22c55e', 'Rental Active':'#3b82f6', 'Rental Completed':'#94a3b8', rejected:'#ef4444', cancelled:'#9ca3af' };
+      const avatarColors = { 'Request Pending':'linear-gradient(135deg,#f59e0b,#d97706)', 'Booking Confirmed':'linear-gradient(135deg,#22c55e,#16a34a)', 'Rental Active':'linear-gradient(135deg,#3b82f6,#1d4ed8)', 'Rental Completed':'linear-gradient(135deg,#94a3b8,#64748b)', rejected:'linear-gradient(135deg,#ef4444,#dc2626)', cancelled:'linear-gradient(135deg,#9ca3af,#6b7280)' };
       const cls = statusCls[status] || 'request-pending';
+      const acColor = statusColors[status] || '#f59e0b';
+      const avGrad = avatarColors[status] || 'linear-gradient(135deg,#4a90e2,#1d4ed8)';
+      const fmtDate = d => { try { return new Date(d).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}); } catch(e) { return String(d||''); } };
       let actions = '';
       if (mode === 'incoming') {
         if (status === 'Request Pending') {
@@ -1341,18 +1665,26 @@
           <span class="req-status ${cls}">${statusLabel[status] || escapeHtml(status)}</span>
         </div>
         <div class="req-renter">
-          <div class="req-avatar">${escapeHtml(initial)}</div>
-          <div><div class="req-renter-name">${escapeHtml(name)}</div></div>
+          <div class="req-avatar" style="background:${avGrad}">${escapeHtml(initial)}</div>
+          <div>
+            <div class="req-renter-name">${escapeHtml(name)}</div>
+            ${mode === 'incoming' && r.renterEmail ? `<div class="req-renter-email">${escapeHtml(r.renterEmail)}</div>` : ''}
+          </div>
         </div>
         <div class="req-dates">
-          <div class="req-date-block"><div class="req-date-label">เริ่ม</div><div class="req-date-value">${escapeHtml(String(r.startDate || ''))}</div></div>
-          <div class="req-date-block"><div class="req-date-label">สิ้นสุด</div><div class="req-date-value">${escapeHtml(String(r.endDate || ''))}</div></div>
-          <div class="req-date-block"><div class="req-date-label">จำนวนวัน</div><div class="req-date-value">${days} วัน</div></div>
+          <div class="req-date-block"><div class="req-date-label">📅 เริ่ม</div><div class="req-date-value">${fmtDate(r.startDate)}</div></div>
+          <div class="req-date-block"><div class="req-date-label">📅 สิ้นสุด</div><div class="req-date-value">${fmtDate(r.endDate)}</div></div>
+          <div class="req-date-block"><div class="req-date-label">⏱ วัน</div><div class="req-date-value">${days} วัน</div></div>
         </div>
-        <div class="req-total">฿${Number(r.totalPrice || 0).toFixed(2)}</div>
+        <div class="req-total" style="color:${acColor}">฿${Number(r.totalPrice || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         ${r.note ? `<div class="req-note">📝 ${escapeHtml(r.note)}</div>` : ''}
         ${actions ? `<div class="req-actions">${actions}</div>` : ''}
-        ${mode === 'incoming' ? `<div class="req-actions" style="margin-top:6px"><button class="btn-view-renter-profile" onclick="openRenterProfileModal(${Number(r.renterUserId)||0},'${escapeHtml(name).replace(/'/g,'&#x27;')}','${escapeHtml(r.renterEmail||'').replace(/'/g,'&#x27;')}')">&#x1F464; ดูประวัติและรีวิวผู้เช่า</button></div>` : ''}
+        ${mode === 'incoming' ? `
+          <div class="req-actions" style="margin-top:6px;display:flex;gap:6px;">
+            <button class="btn-view-renter-profile" onclick="openRenterProfileModal(${Number(r.renterUserId)||0},'${escapeHtml(name).replace(/'/g,'&#x27;')}','${escapeHtml(r.renterEmail||'').replace(/'/g,'&#x27;')}')">
+              &#x1F464; ดูประวัติผู้เช่า
+            </button>
+          </div>` : ''}
       </div>`;
     }
 
@@ -1675,7 +2007,7 @@
         <div class="modal-actions"><button class="btn btn-outline urCloseBtn">ปิด</button></div>
       </div>
 
-      <!-- Blocked (condition not met) -->
+      <!-- Blocked -->
       <div id="urBlocked" class="review-body hidden">
         <div style="text-align:center;padding:24px 0 16px">
           <div style="font-size:52px;margin-bottom:10px">🔒</div>
@@ -1687,7 +2019,7 @@
 
       <!-- Write review -->
       <div id="urWrite" class="review-body hidden">
-        <div class="review-lessee header" style="margin-bottom:16px">
+        <div class="review-lessee header">
           <div class="review-avatar"></div>
           <div>
             <div class="review-lessee-name" id="urWriteName">-</div>
@@ -1695,36 +2027,106 @@
           </div>
         </div>
 
-        <!-- รีวิวผู้เช่า (ไม่มีคะแนนอุปกรณ์) -->
-        <!-- ① คะแนนอุปกรณ์ (เฝันผู้เช่า: renter เท่านั้น) → Device.Rating -->
-        <div id="urDeviceStarsSection" style="margin-bottom:18px;padding-bottom:16px;border-bottom:1.5px solid #eef0f5">
-          <div class="review-label" style="margin-bottom:8px">
-            ⭐ คะแนนอุปกรณ์
-            <span style="color:#bbb;font-weight:400;font-size:11px">(บังคับ)</span>
-          </div>
-          <div class="review-stars" id="urDeviceStars" aria-label="คะแนนอุปกรณ์">
-            <button class="star" data-value="1" type="button">★</button>
-            <button class="star" data-value="2" type="button">★</button>
-            <button class="star" data-value="3" type="button">★</button>
-            <button class="star" data-value="4" type="button">★</button>
-            <button class="star" data-value="5" type="button">★</button>
-          </div>
-        </div>
+        <div class="ur-write-scroll">
 
-        <!-- ② คะแนนเจ้าของ/ผู้เช่า → reviews table -->
-        <div class="review-label" style="margin-bottom:8px">
-          👤 คะแนน <span id="urPersonLabel">บุคคล</span>
-          <span style="color:#bbb;font-weight:400;font-size:11px">(บังคับ)</span>
-        </div>
-        <div class="review-stars" id="urWriteStars" aria-label="เลือกคะแนน">
-          <button class="star" data-value="1" type="button">★</button>
-          <button class="star" data-value="2" type="button">★</button>
-          <button class="star" data-value="3" type="button">★</button>
-          <button class="star" data-value="4" type="button">★</button>
-          <button class="star" data-value="5" type="button">★</button>
-        </div>
-        <label class="review-label" for="urWriteText" style="margin-top:14px;display:block">เขียนรีวิว <span style="color:#bbb;font-weight:400">(ไม่บังคับ)</span></label>
-        <textarea id="urWriteText" rows="4" placeholder="แบ่งปันประสบการณ์ของคุณ..."></textarea>
+          <!-- Device section (renter only) -->
+          <div id="urDeviceStarsSection" class="sub-rating-section">
+            <div class="sub-rating-section-title">🖥️ อุปกรณ์</div>
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">คะแนนภาพรวม <span class="req">*</span></span>
+              <div class="review-stars" id="urDeviceStars" aria-label="คะแนนภาพรวมอุปกรณ์">
+                <button class="star" data-value="1" type="button">★</button>
+                <button class="star" data-value="2" type="button">★</button>
+                <button class="star" data-value="3" type="button">★</button>
+                <button class="star" data-value="4" type="button">★</button>
+                <button class="star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">สภาพอุปกรณ์</span>
+              <div class="sub-stars" id="urDeviceConditionStars" data-key="ratingCondition">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">คุ้มค่ากับราคา</span>
+              <div class="sub-stars" id="urDeviceValueStars" data-key="ratingValue">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Person section -->
+          <div class="sub-rating-section">
+            <div class="sub-rating-section-title">👤 <span id="urPersonLabel">บุคคล</span></div>
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">คะแนนภาพรวม <span class="req">*</span></span>
+              <div class="review-stars" id="urWriteStars" aria-label="เลือกคะแนน">
+                <button class="star" data-value="1" type="button">★</button>
+                <button class="star" data-value="2" type="button">★</button>
+                <button class="star" data-value="3" type="button">★</button>
+                <button class="star" data-value="4" type="button">★</button>
+                <button class="star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">การสื่อสาร</span>
+              <div class="sub-stars" id="urCommunicationStars" data-key="ratingCommunication">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <!-- renter only: ตรงตามที่บอก -->
+            <div class="sub-rating-row" id="urAccuracyRow">
+              <span class="sub-rating-label">ตรงตามที่บอก</span>
+              <div class="sub-stars" id="urAccuracyStars" data-key="ratingAccuracy">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <!-- owner only: ดูแลอุปกรณ์ -->
+            <div class="sub-rating-row" id="urCareRow">
+              <span class="sub-rating-label">ดูแลอุปกรณ์</span>
+              <div class="sub-stars" id="urCareStars" data-key="ratingCare">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+            <!-- both: ตรงเวลา -->
+            <div class="sub-rating-row">
+              <span class="sub-rating-label">ตรงเวลา</span>
+              <div class="sub-stars" id="urPunctualityStars" data-key="ratingPunctuality">
+                <button class="sub-star" data-value="1" type="button">★</button>
+                <button class="sub-star" data-value="2" type="button">★</button>
+                <button class="sub-star" data-value="3" type="button">★</button>
+                <button class="sub-star" data-value="4" type="button">★</button>
+                <button class="sub-star" data-value="5" type="button">★</button>
+              </div>
+            </div>
+          </div>
+
+          <label class="review-label" for="urWriteText" style="margin-top:4px;display:block">📝 ความคิดเห็น <span style="color:#bbb;font-weight:400;font-size:11px">(ไม่บังคับ)</span></label>
+          <textarea id="urWriteText" rows="3" placeholder="แบ่งปันประสบการณ์ของคุณ..." style="min-height:72px"></textarea>
+
+        </div><!-- /.ur-write-scroll -->
+
         <div class="modal-actions" style="margin-top:14px">
           <button id="urSubmit" class="btn btn-cta" type="button">ส่งรีวิว</button>
           <button class="btn btn-outline urCloseBtn" type="button">ยกเลิก</button>
@@ -2298,20 +2700,20 @@
     const write      = document.getElementById('urWrite');
     const writeName  = document.getElementById('urWriteName');
     const writeRole  = document.getElementById('urWriteRole');
-    const starsEl        = document.getElementById('urWriteStars');
-    const textEl         = document.getElementById('urWriteText');
-    const submitBtn      = document.getElementById('urSubmit');
-    const doneStars      = document.getElementById('urDoneStars');
-    const doneDesc       = document.getElementById('urDoneDesc');
-    const blockedMsg     = document.getElementById('urBlockedMsg');
-    const blockedStat    = document.getElementById('urBlockedStatus');
-    const deviceStarsEl      = document.getElementById('urDeviceStars');
-    const deviceStarsSection = document.getElementById('urDeviceStarsSection');
-    const personLabel        = document.getElementById('urPersonLabel');
+    const starsEl    = document.getElementById('urWriteStars');
+    const textEl     = document.getElementById('urWriteText');
+    const submitBtn  = document.getElementById('urSubmit');
+    const doneStars  = document.getElementById('urDoneStars');
+    const doneDesc   = document.getElementById('urDoneDesc');
+    const blockedMsg = document.getElementById('urBlockedMsg');
+    const blockedStat= document.getElementById('urBlockedStatus');
 
     let activeRequestNo = null;
     let activeDeviceNo  = 0;
     let activeRole      = '';
+    const deviceStarsEl     = document.getElementById('urDeviceStars');
+    const deviceStarsSection= document.getElementById('urDeviceStarsSection');
+    const personLabel       = document.getElementById('urPersonLabel');
 
     function esc(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function showOnly(el){ [loading,done,blocked,write].forEach(v=>v&&v.classList.toggle('hidden',v!==el)); }
@@ -2331,10 +2733,16 @@
       if (writeRole)   writeRole.textContent   = role === 'renter' ? '(เจ้าของอุปกรณ์)' : '(ผู้เช่าอุปกรณ์)';
       if (titleEl)     titleEl.textContent     = role === 'renter' ? '⭐ รีวิวเจ้าของ' : '⭐ รีวิวผู้เช่า';
       if (personLabel) personLabel.textContent = role === 'renter' ? 'เจ้าของอุปกรณ์' : 'ผู้เช่า';
-      // แสดง device stars เฉพาะผู้เช่า (renter) รีวิวเจ้าของเท่านั้น
+      // Show/hide sections based on role
       if (deviceStarsSection) deviceStarsSection.style.display = role === 'renter' ? '' : 'none';
+      const accuracyRow = document.getElementById('urAccuracyRow');
+      const careRow     = document.getElementById('urCareRow');
+      if (accuracyRow) accuracyRow.style.display = role === 'renter' ? '' : 'none';
+      if (careRow)     careRow.style.display     = role === 'owner'  ? '' : 'none';
+      // Reset all stars
       if (starsEl)     Array.from(starsEl.querySelectorAll('.star')).forEach(s=>s.classList.remove('active'));
       if (deviceStarsEl) Array.from(deviceStarsEl.querySelectorAll('.star')).forEach(s=>s.classList.remove('active'));
+      document.querySelectorAll('#urWrite .sub-star').forEach(s => s.classList.remove('active'));
       if (textEl)      textEl.value = '';
       showOnly(loading);
       overlay.classList.add('open');
@@ -2399,38 +2807,71 @@
       );
     });
 
-    // Submit
+    // Sub-star rating (delegated from #urWrite)
+    const urWriteEl = document.getElementById('urWrite');
+    urWriteEl && urWriteEl.addEventListener('click', e => {
+      const s = e.target.closest('.sub-star');
+      if (!s) return;
+      const container = s.closest('.sub-stars');
+      if (!container) return;
+      const val = parseInt(s.dataset.value, 10);
+      Array.from(container.querySelectorAll('.sub-star')).forEach(st =>
+        st.classList.toggle('active', parseInt(st.dataset.value, 10) <= val)
+      );
+    });
+
+    // Submit — บันทึกทั้งคะแนนอุปกรณ์และคะแนนบุคคล (พร้อม sub-ratings)
     submitBtn && submitBtn.addEventListener('click', async () => {
       const isRenter    = activeRole === 'renter';
       const deviceStars = deviceStarsEl ? deviceStarsEl.querySelectorAll('.star.active').length : 0;
       const personStars = starsEl       ? starsEl.querySelectorAll('.star.active').length       : 0;
       const text        = textEl        ? textEl.value.trim()                                   : '';
-      if (isRenter && !deviceStars) { alert('กรุณาเลือกคะแนนอุปกรณ์ (1–5 ดาว)'); return; }
-      if (!personStars)             { alert('กรุณาเลือกคะแนน' + (isRenter ? 'เจ้าของอุปกรณ์' : 'ผู้เช่า') + ' (1–5 ดาว)'); return; }
-      if (!activeRequestNo)         { alert('ไม่พบรายการเช่า'); return; }
+      if (isRenter && !deviceStars) { alert('กรุณาเลือกคะแนนภาพรวมอุปกรณ์ (1–5 ดาว)'); return; }
+      if (!personStars) { alert('กรุณาเลือกคะแนนภาพรวมบุคคล (1–5 ดาว)'); return; }
+      if (!activeRequestNo) { alert('ไม่พบรายการเช่า'); return; }
       const token = localStorage.getItem('access_token') || '';
       if (!token) { alert('กรุณาเข้าสู่ระบบก่อน'); return; }
+
+      // Collect optional sub-rating values (null = not rated)
+      function subVal(id) {
+        const el = document.getElementById(id);
+        const n = el ? el.querySelectorAll('.sub-star.active').length : 0;
+        return n > 0 ? n : null;
+      }
 
       submitBtn.disabled    = true;
       submitBtn.textContent = 'กำลังบันทึก...';
       try {
-        // 1️⃣ บันทึกคะแนนอุปกรณ์ (renter เท่านั้น) → Device.Rating
+        // 1️⃣ บันทึกคะแนนอุปกรณ์ (เฉพาะผู้เช่า) → Review table
         if (isRenter && activeDeviceNo) {
           const devRes = await fetch(`/api/devices/${activeDeviceNo}/reviews`, {
             method: 'POST',
             headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rating: deviceStars, description: '' })
+            body: JSON.stringify({
+              rating:          deviceStars,
+              description:     '',
+              ratingCondition: subVal('urDeviceConditionStars'),
+              ratingValue:     subVal('urDeviceValueStars'),
+            })
           });
           if (!devRes.ok) {
             const d = await devRes.json().catch(()=>({}));
-            console.warn('Device review warning:', d.message || 'HTTP ' + devRes.status);
+            throw new Error('บันทึกคะแนนอุปกรณ์ไม่สำเร็จ: ' + (d.message || 'HTTP ' + devRes.status));
           }
         }
-        // 2️⃣ บันทึกคะแนนบุคคล → reviews table (reviewuserid=ผู้รีวิว, revieweuserid=คู่อีกฝ่าย)
+        // 2️⃣ บันทึกคะแนนบุคคล → UserReview table
         const res = await fetch('/api/reviews', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ requestNo: activeRequestNo, rating: personStars, description: text })
+          body: JSON.stringify({
+            requestNo:           activeRequestNo,
+            rating:              personStars,
+            description:         text,
+            ratingCommunication: subVal('urCommunicationStars'),
+            ratingPunctuality:   subVal('urPunctualityStars'),
+            ratingAccuracy:      isRenter  ? subVal('urAccuracyStars') : null,
+            ratingCare:          !isRenter ? subVal('urCareStars')     : null,
+          })
         });
         const result = await res.json();
         if (!res.ok || !result.success) throw new Error(result.message || 'บันทึกไม่สำเร็จ');
@@ -2448,7 +2889,7 @@
     // Close handlers
     document.getElementById('urClose') && document.getElementById('urClose').addEventListener('click', closeModal);
     overlay.addEventListener('click', e => {
-      if (e.target === overlay)           closeModal();
+      if (e.target === overlay)            closeModal();
       if (e.target.closest('.urCloseBtn')) closeModal();
     });
 
@@ -2671,18 +3112,31 @@
           rvEl.innerHTML = '<div class="rp-no-reviews"><div class="icon">📭</div><p>ยังไม่มีรีวิว</p></div>';
           return;
         }
-        rvEl.innerHTML = reviews.map(rv => `
+        rvEl.innerHTML = reviews.map(rv => {
+          const subRatings = [
+            { label:'การสื่อสาร', val: rv.ratingCommunication },
+            { label:'ตรงเวลา',    val: rv.ratingPunctuality },
+            { label:'ดูแลอุปกรณ์', val: rv.ratingCare },
+            { label:'ความถูกต้อง', val: rv.ratingAccuracy },
+          ].filter(s => s.val && s.val > 0);
+          const subHtml = subRatings.length > 0
+            ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;margin-bottom:4px;">${subRatings.map(s =>
+                `<span style="font-size:11px;background:#f0f4ff;color:#3b5998;border-radius:6px;padding:2px 8px;">${esc(s.label)}: ${'★'.repeat(s.val)}${'☆'.repeat(5-s.val)}</span>`
+              ).join('')}</div>`
+            : '';
+          return `
           <div class="rp-review-item">
             <div class="rp-review-top">
               <div class="rp-review-stars">${starsHtml(rv.rating, 15)}</div>
               <div class="rp-review-date">${esc(fmtDate(rv.createdAt))}</div>
             </div>
             ${rv.deviceName ? `<div class="rp-review-device">📱 ${esc(rv.deviceName)}</div>` : ''}
+            ${subHtml}
             ${rv.reviewText ? `<div class="rp-review-text">${esc(rv.reviewText)}</div>` : ''}
             ${rv.replyText   ? `<div class="rp-review-reply">💬 <em>${esc(rv.replyText)}</em></div>` : ''}
             ${rv.reviewerName ? `<div class="rp-reviewer">— ${esc(rv.reviewerName)}</div>` : ''}
           </div>
-        `).join('');
+        `}).join('');
       }
 
       /* Close handlers */
