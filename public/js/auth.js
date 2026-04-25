@@ -58,7 +58,14 @@ async function apiRequest(endpoint, options = {}) {
             ...options,
             headers,
         });
-        const data = await response.json();
+        let data;
+        const contentType = response.headers.get('content-type') ?? '';
+        if (contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            data = { success: false, message: text || `Server error (${response.status})` };
+        }
         if (!response.ok) {
             // ถ้า token หมดอายุ และไม่ได้อยู่ในโหมด skipRefresh
             if (response.status === 401 && !options.skipRefresh) {

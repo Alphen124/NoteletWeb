@@ -27,9 +27,15 @@ const apiProxy = createProxyMiddleware({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error: (err: Error, _req: any, res: any) => {
       console.error('[proxy] error:', err.message);
-      if (res && typeof res.writeHead === 'function') {
-        res.writeHead(502, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, message: 'Proxy error: Go backend unreachable' }));
+      try {
+        if (res && !res.headersSent && typeof res.writeHead === 'function') {
+          res.writeHead(502, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, message: 'Backend unreachable. Please try again in a moment.' }));
+        } else if (res && !res.headersSent && typeof res.status === 'function') {
+          res.status(502).json({ success: false, message: 'Backend unreachable. Please try again in a moment.' });
+        }
+      } catch (e) {
+        console.error('[proxy] failed to send error response:', e);
       }
     },
   },
