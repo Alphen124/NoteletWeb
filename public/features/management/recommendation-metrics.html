@@ -216,8 +216,8 @@
       <div class="ctrl-group">
         <label>Top-K</label>
         <select id="kSelect">
-          <option value="5">K = 5</option>
-          <option value="10" selected>K = 10</option>
+          <option value="5" selected>K = 5</option>
+          <option value="10">K = 10</option>
           <option value="20">K = 20</option>
         </select>
       </div>
@@ -246,8 +246,11 @@
         <h3>🌱 Seed ข้อมูลทดสอบ (Admin เท่านั้น)</h3>
         <p>
           เนื่องจาก Metrics ต้องการข้อมูล Interaction จาก User หลายคน ปุ่มด้านล่างจะ <strong>สร้างข้อมูลสังเคราะห์</strong>
-          จาก User และ Device จริงในระบบ โดยจำลองรูปแบบการใช้งานแบบมีกลุ่ม Preference
-          เพื่อให้เห็นค่า Metrics ที่มีความหมาย<br>
+          จาก User และ Device จริงในระบบ โดยจำลองรูปแบบการใช้งานแบบมีกลุ่ม Preference<br><br>
+          <strong>สเกลที่ตั้งค่า:</strong>
+          ดึง User สูงสุด <strong>500 คน</strong> × Device สูงสุด <strong>100 ชิ้น</strong> → เป้าหมาย <strong>~5,000 events</strong><br>
+          <strong>Train:</strong> วัน -90 ถึง -15 (~2.5 เดือน) &nbsp;|&nbsp;
+          <strong>Test:</strong> วัน -14 ถึง -1 (14 วันล่าสุด)<br>
           <strong>?clear=true</strong> จะลบ DeviceEvent ทั้งหมดก่อน แล้ว Seed ใหม่
         </p>
         <div class="seed-row">
@@ -566,7 +569,7 @@
         } else {
           const d = json.data || {};
           resultEl.style.background = '#dcfce7'; resultEl.style.color = '#166534';
-          resultEl.textContent = `✅ Seeded ${d.inserted_events || 0} events จาก ${d.users || 0} users × ${d.devices || 0} devices (${d.type_groups || 0} type groups) — กด "คำนวณ Metrics" เพื่อดูผล`;
+          resultEl.textContent = `✅ Seeded ${d.inserted_events || 0} events จาก ${d.users || 0} users × ${d.devices || 0} devices (${d.type_groups || 0} type groups) — train ${d.events_per_user_train || '?'} ev/user, test ${d.events_per_user_test || '?'} ev/user — กด "คำนวณ Metrics" เพื่อดูผล`;
         }
         resultEl.style.display = 'block';
         // Auto-run metrics after seed
