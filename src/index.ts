@@ -25,14 +25,25 @@ const apiProxy = createProxyMiddleware({
   pathFilter: ['/api/**', '/uploads/**'],
   on: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    proxyRes: (proxyRes: any, _req: any, res: any) => {
+      const status: number = proxyRes.statusCode ?? 200;
+      const contentType: string = proxyRes.headers['content-type'] ?? '';
+      // ถ้า backend ส่ง 5xx แต่ไม่ใช่ JSON (เช่น Render sleep page) → แปลงเป็น JSON
+      if (status >= 500 && !contentType.includes('application/json')) {
+        proxyRes.destroy();
+        if (!res.headersSent) {
+          res.writeHead(502, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, message: 'Backend is starting up, please try again in a moment.' }));
+        }
+      }
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error: (err: Error, _req: any, res: any) => {
       console.error('[proxy] error:', err.message);
       try {
         if (res && !res.headersSent && typeof res.writeHead === 'function') {
           res.writeHead(502, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: false, message: 'Backend unreachable. Please try again in a moment.' }));
-        } else if (res && !res.headersSent && typeof res.status === 'function') {
-          res.status(502).json({ success: false, message: 'Backend unreachable. Please try again in a moment.' });
         }
       } catch (e) {
         console.error('[proxy] failed to send error response:', e);
