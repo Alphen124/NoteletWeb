@@ -286,20 +286,21 @@
         const DONE = ['Rental Completed', 'cancelled', 'rejected'];
         const isDone = DONE.includes(item.status);
 
-        /* Chat button — borrower → staff/owner; lender → borrower */
+        /* Chat button — borrower → staff room; lender → borrower */
         const chatPartnerName = esc(isLender
           ? (item.renterName  || item.renterEmail  || 'ผู้ยืม')
-          : (item.ownerName   || item.ownerEmail   || 'เจ้าหน้าที่'));
-        const chatPartnerUid = isLender
-          ? (item.renterUserId || '')
-          : (item.ownerUserId  || '');
+          : 'เจ้าหน้าที่');
+        /* lender side needs renterUserId to open that renter's room;
+           borrower side must NOT pass ownerUserId — let backend find the
+           correct room by (deviceId + borrower token) to match the staff room */
+        const chatPartnerUid = isLender ? (item.renterUserId || '') : '';
         const chatBtn = isDone ? '' : `<button class="btn-action-primary btn-open-chat-borrow"
           data-deviceno="${item.deviceNo || ''}"
           data-devicename="${esc(item.deviceName || '')}"
           data-partnername="${chatPartnerName}"
           data-partneruserid="${chatPartnerUid}"
           data-requestno="${item.requestNo || ''}"
-          >💬 แชท</button>`;
+          >💬 แชทกับเจ้าหน้าที่</button>`;
 
         const actionsBlock = (actionBtns || chatBtn)
           ? `<div class="card-actions">${actionBtns}${chatBtn}</div>` : '';
@@ -401,12 +402,19 @@
         }
         const chatBtn = e.target.closest('.btn-open-chat-borrow');
         if (chatBtn) {
+          const isLenderTab = currentTab === 'lender';
           const p = new URLSearchParams({
-            deviceId:    chatBtn.dataset.deviceno    || '',
-            deviceName:  chatBtn.dataset.devicename  || '',
-            ownerName:   chatBtn.dataset.partnername || '',
-            ownerUserId: chatBtn.dataset.partneruserid || '',
+            deviceId:   chatBtn.dataset.deviceno   || '',
+            deviceName: chatBtn.dataset.devicename || '',
+            ownerName:  chatBtn.dataset.partnername || '',
           });
+          /* lender side knows the renterUserId — pass it so direct-chat.html
+             can find the correct room for that specific renter.
+             borrower side leaves ownerUserId empty so backend derives the
+             room from (deviceId + current user token). */
+          if (isLenderTab && chatBtn.dataset.partneruserid) {
+            p.set('ownerUserId', chatBtn.dataset.partneruserid);
+          }
           window.location.href = `/features/chat/direct-chat.html?${p.toString()}`;
           return;
         }
