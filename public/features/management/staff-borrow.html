@@ -204,9 +204,10 @@
         const chatBtn = `<button class="btn-chat-staff btn-open-chat"
           data-deviceno="${item.deviceNo || ''}"
           data-devicename="${deviceName}"
-          data-ownername="${ownerName}"
+          data-ownername="${renterName}"
+          data-otheruserid="${item.renterUserId || ''}"
           data-requestno="${item.requestNo || ''}"
-          >💬 แชทกับเจ้าของ</button>`;
+          >💬 แชทกับผู้ยืม</button>`;
 
         return `
           <div class="rentout-card borrow-card" data-request="${item.requestNo}">
@@ -273,10 +274,11 @@
         document.querySelectorAll('.btn-open-chat').forEach(btn => {
           btn.addEventListener('click', () => {
             const p = new URLSearchParams({
-              deviceId:   btn.dataset.deviceno   || '',
-              deviceName: btn.dataset.devicename || '',
-              ownerName:  btn.dataset.ownername  || '',
-              requestNo:  btn.dataset.requestno  || '',
+              deviceId:    btn.dataset.deviceno   || '',
+              deviceName:  btn.dataset.devicename || '',
+              ownerName:   btn.dataset.ownername  || '',
+              ownerUserId: btn.dataset.otheruserid || '',
+              requestNo:   btn.dataset.requestno  || '',
               pricePerDay: '0',
             });
             window.location.href = `/features/chat/direct-chat.html?${p.toString()}`;
