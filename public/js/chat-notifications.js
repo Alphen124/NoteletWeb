@@ -55,10 +55,12 @@
     }
     function chatLink(n) {
         const room = n.roomName ?? '';
-        /* If rental-chat.html has ever connected to this room it stores a marker.
-           If no marker → treat as a direct (private) chat. */
+        /* Check localStorage marker set by rental-chat.html when it connects */
         const isRentalRoom = !!localStorage.getItem('notelet_rental_room_' + room);
-        if (isRentalRoom) {
+        /* Pattern hint: direct rooms are named dev-{deviceId}-u-{userId} */
+        const isDirectPattern = /^dev-\d+-u-\d+$/.test(room);
+        if (isRentalRoom || (!isDirectPattern && room)) {
+            /* Rental negotiation chat */
             const p = new URLSearchParams({
                 room: room,
                 deviceId: String(n.deviceId ?? ''),
@@ -67,16 +69,13 @@
             });
             return `/features/chat/rental-chat.html?${p.toString()}`;
         }
-        /* Direct chat: extract the other user's ID encoded in the room name
-           (format: dev-{deviceId}-u-{userId}).  Pass as ownerUserId so
-           direct-chat.html can look up the correct paired room via the API. */
-        const m = room.match(/^dev-\d+-u-(\d+)/);
-        const otherUserId = m ? m[1] : '';
+        /* Direct (private) chat — pass room directly so direct-chat.html
+           skips the /api/chat/device-room call and joins the exact room */
         const p = new URLSearchParams({
-            deviceId:    String(n.deviceId ?? ''),
-            deviceName:  n.deviceName ?? '',
-            ownerName:   n.senderName ?? '',
-            ownerUserId: otherUserId,
+            room: room,
+            deviceId: String(n.deviceId ?? ''),
+            deviceName: n.deviceName ?? '',
+            ownerName: n.senderName ?? '',
         });
         return `/features/chat/direct-chat.html?${p.toString()}`;
     }

@@ -53,13 +53,34 @@
   }
 
   function chatLink(n: ChatNotification): string {
+    const room = n.roomName ?? '';
+
+    /* Check localStorage marker set by rental-chat.html when it connects */
+    const isRentalRoom = !!localStorage.getItem('notelet_rental_room_' + room);
+
+    /* Pattern hint: direct rooms are named dev-{deviceId}-u-{userId} */
+    const isDirectPattern = /^dev-\d+-u-\d+$/.test(room);
+
+    if (isRentalRoom || (!isDirectPattern && room)) {
+      /* Rental negotiation chat */
+      const p = new URLSearchParams({
+        room:       room,
+        deviceId:   String(n.deviceId ?? ''),
+        deviceName: n.deviceName ?? '',
+        skipModal:  '1',
+      });
+      return `/features/chat/rental-chat.html?${p.toString()}`;
+    }
+
+    /* Direct (private) chat — pass room directly so direct-chat.html
+       skips the /api/chat/device-room call and joins the exact room */
     const p = new URLSearchParams({
-      room: n.roomName ?? '',
-      deviceId: String(n.deviceId ?? ''),
+      room:       room,
+      deviceId:   String(n.deviceId ?? ''),
       deviceName: n.deviceName ?? '',
-      skipModal: '1',
+      ownerName:  n.senderName ?? '',
     });
-    return `/features/chat/rental-chat.html?${p.toString()}`;
+    return `/features/chat/direct-chat.html?${p.toString()}`;
   }
 
   /* ── Styles (injected once) ─────────────────────────────────── */
