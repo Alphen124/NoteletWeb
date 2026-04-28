@@ -222,6 +222,24 @@
         }
 
         renderTab(currentTab);
+
+        /* ── Pre-register borrower as room participant ─────────────────────
+           เรียก /api/chat/device-room สำหรับแต่ละคำขอที่ยังไม่ปิด
+           เพื่อให้ backend รู้จัก borrower เป็น participant ของ room นั้น
+           → backend จะสร้าง notification ให้ borrower เมื่อเจ้าหน้าที่ส่งข้อความ */
+        const DONE_STATUSES = new Set(['Rental Completed', 'cancelled', 'rejected']);
+        const activeRequests = borrowerData.filter(r => !DONE_STATUSES.has(r.status));
+        if (activeRequests.length > 0) {
+          const token = getToken();
+          activeRequests.forEach(r => {
+            if (!r.deviceNo) return;
+            fetch('/api/chat/device-room', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+              body: JSON.stringify({ deviceId: r.deviceNo }),
+            }).catch(() => {});
+          });
+        }
       }
 
       /* ── Render ────────────────────────────────────────────────────────── */
