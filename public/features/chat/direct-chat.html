@@ -473,7 +473,7 @@ function connectWS(room) {
 
   let apiBase = (window.NOTELET_API_URL && window.NOTELET_API_URL !== '')
     ? window.NOTELET_API_URL
-    : 'https://noteletwebapi-production.up.railway.app';
+    : 'https://notelet-api.onrender.com';
   if (!window.NOTELET_API_URL &&
       (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
     apiBase = 'http://localhost:3001';

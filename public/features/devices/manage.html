@@ -281,7 +281,7 @@ function connect() {
   // to the Go backend on Railway instead of routing through location.host.
   const apiBase = (window.NOTELET_API_URL && window.NOTELET_API_URL !== '')
     ? window.NOTELET_API_URL
-    : 'https://noteletwebapi-production.up.railway.app';
+    : 'https://notelet-api.onrender.com';
   const proto = apiBase.startsWith('https') ? 'wss' : 'ws';
   const wsHost = apiBase.replace(/^https?:\/\//, '');
   ws = new WebSocket(`${proto}://${wsHost}/api/chat/ws?token=${encodeURIComponent(user.token)}&room=${encodeURIComponent(room)}`);
