@@ -265,8 +265,26 @@
           }
         }
 
-        const actionsBlock = actionBtns
-          ? `<div class="card-actions">${actionBtns}</div>` : '';
+        const DONE = ['Rental Completed', 'cancelled', 'rejected'];
+        const isDone = DONE.includes(item.status);
+
+        /* Chat button — borrower → staff/owner; lender → borrower */
+        const chatPartnerName = esc(isLender
+          ? (item.renterName  || item.renterEmail  || 'ผู้ยืม')
+          : (item.ownerName   || item.ownerEmail   || 'เจ้าหน้าที่'));
+        const chatPartnerUid = isLender
+          ? (item.renterUserId || '')
+          : (item.ownerUserId  || '');
+        const chatBtn = isDone ? '' : `<button class="btn-action-primary btn-open-chat-borrow"
+          data-deviceno="${item.deviceNo || ''}"
+          data-devicename="${esc(item.deviceName || '')}"
+          data-partnername="${chatPartnerName}"
+          data-partneruserid="${chatPartnerUid}"
+          data-requestno="${item.requestNo || ''}"
+          >💬 แชท</button>`;
+
+        const actionsBlock = (actionBtns || chatBtn)
+          ? `<div class="card-actions">${actionBtns}${chatBtn}</div>` : '';
 
         el.innerHTML = `
           <div class="card-media-large" aria-hidden></div>
@@ -361,6 +379,17 @@
         const cancelBtn = e.target.closest('.btn-cancel-req');
         if (cancelBtn) {
           patchRequest(Number(cancelBtn.dataset.id), 'cancel', cancelBtn, 'ยืนยันการยกเลิกคำขอยืมนี้?');
+          return;
+        }
+        const chatBtn = e.target.closest('.btn-open-chat-borrow');
+        if (chatBtn) {
+          const p = new URLSearchParams({
+            deviceId:    chatBtn.dataset.deviceno    || '',
+            deviceName:  chatBtn.dataset.devicename  || '',
+            ownerName:   chatBtn.dataset.partnername || '',
+            ownerUserId: chatBtn.dataset.partneruserid || '',
+          });
+          window.location.href = `/features/chat/direct-chat.html?${p.toString()}`;
           return;
         }
       });

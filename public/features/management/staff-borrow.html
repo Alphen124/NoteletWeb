@@ -188,16 +188,17 @@
         const deviceName = esc(item.deviceName || `อุปกรณ์ #${item.deviceNo || ''}`);
         const ownerName  = esc(item.ownerName  || item.ownerEmail || 'เจ้าของ');
 
+        const _dn  = `data-deviceno="${item.deviceNo || ''}" data-devicename="${deviceName}" data-renteruserid="${item.renterUserId || ''}" data-rentername="${renterName}"`;
         let actions = '';
         if (!isDone) {
           if (isPending) {
             actions = `
-              <button class="btn-action-primary btn-approve" data-id="${item.requestNo}">อนุมัติ</button>
-              <button class="btn-action-danger btn-reject" data-id="${item.requestNo}">ปฏิเสธ</button>`;
+              <button class="btn-action-primary btn-approve" data-id="${item.requestNo}" ${_dn}>อนุมัติ</button>
+              <button class="btn-action-danger btn-reject" data-id="${item.requestNo}" ${_dn}>ปฏิเสธ</button>`;
           } else if (isConfirmed) {
-            actions = `<button class="btn-action-primary btn-mark-active" data-id="${item.requestNo}">ทำเครื่องหมายว่าส่งมอบแล้ว</button>`;
+            actions = `<button class="btn-action-primary btn-mark-active" data-id="${item.requestNo}" ${_dn}>ทำเครื่องหมายว่าส่งมอบแล้ว</button>`;
           } else if (isActive) {
-            actions = `<button class="btn-action-secondary btn-mark-returned" data-id="${item.requestNo}">ทำเครื่องหมายว่าคืนแล้ว</button>`;
+            actions = `<button class="btn-action-secondary btn-mark-returned" data-id="${item.requestNo}" ${_dn}>ทำเครื่องหมายว่าคืนแล้ว</button>`;
           }
         }
 
@@ -249,11 +250,57 @@
             const j = await res.json().catch(() => ({}));
             throw new Error(j.message || `HTTP ${res.status}`);
           }
+          /* ── Send chat notification to borrower ── */
+          if (btnEl) {
+            const deviceNo     = parseInt(btnEl.dataset.deviceno)    || 0;
+            const renterUserId = parseInt(btnEl.dataset.renteruserid) || 0;
+            const deviceName   = btnEl.dataset.devicename || 'อุปกรณ์';
+            const renterName   = btnEl.dataset.rentername || 'ผู้ยืม';
+            if (deviceNo && renterUserId) {
+              /* Determine message by endpoint */
+              let notifText = '📋 เจ้าหน้าที่ได้อัปเดตสถานะคำขอยืมของคุณ';
+              if (url.endsWith('/confirm'))  notifText = `✅ คำขอยืม "${deviceName}" ของคุณได้รับการอนุมัติแล้ว`;
+              if (url.endsWith('/reject'))   notifText = `❌ คำขอยืม "${deviceName}" ของคุณถูกปฏิเสธ`;
+              if (url.endsWith('/active'))   notifText = `📦 "${deviceName}" ถูกส่งมอบให้คุณแล้ว กรุณารับอุปกรณ์`;
+              if (url.endsWith('/returned')) notifText = `🏁 การยืม "${deviceName}" เสร็จสิ้น ขอบคุณ`;
+              sendBorrowerNotif(deviceNo, renterUserId, notifText);
+            }
+          }
           await loadData();
         } catch (e) {
           alert('เกิดข้อผิดพลาด: ' + e.message);
           if (btnEl) btnEl.disabled = false;
         }
+      }
+
+      /* ── Send a chat notification to borrower via WebSocket ── */
+      function sendBorrowerNotif(deviceNo, renterUserId, text) {
+        const token = getToken();
+        if (!token) return;
+        /* Create/get the borrow chat room then send one system message */
+        fetch('/api/chat/device-room', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ deviceId: deviceNo, renterId: renterUserId }),
+        })
+          .then(r => r.ok ? r.json() : Promise.reject())
+          .then(data => {
+            const room = data.roomName;
+            if (!room) return;
+            let apiBase = 'https://notelet-api.onrender.com';
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+              apiBase = 'http://localhost:3001';
+            }
+            const proto = apiBase.startsWith('https') ? 'wss' : 'ws';
+            const host  = apiBase.replace(/^https?:\/\//, '');
+            const ws = new WebSocket(`${proto}://${host}/api/chat/ws?token=${encodeURIComponent(token)}&room=${encodeURIComponent(room)}`);
+            ws.onopen = () => {
+              ws.send(JSON.stringify({ type: 'chat', roomId: room, content: text }));
+              setTimeout(() => ws.close(), 1500);
+            };
+            ws.onerror = () => ws.close();
+          })
+          .catch(() => {});
       }
 
       function attachHandlers() {
