@@ -13,7 +13,7 @@ import { setRoutes } from './routes';
 const app = express();
 const PORT = process.env.PORT || 3030;
 // const API_TARGET = process.env.API_URL || 'https://notelet-api.onrender.com';
-const API_TARGET = process.env.API_URL || 'http://localhost:3001';
+const API_TARGET = process.env.API_URL || 'https://notelet-api.onrender.com';
 // ============================================================
 // API Proxy Configuration (REST + WebSocket)
 // ============================================================
