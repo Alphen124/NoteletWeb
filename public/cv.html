@@ -674,6 +674,91 @@
       width: 100%; height: 100%; border: none; border-radius: var(--radius);
     }
 
+    /* ── Power BI Tabs ── */
+    .pbi-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .pbi-tab {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: none;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      transition: background .2s, color .2s;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      border-right: 1px solid var(--border);
+      line-height: 1.3;
+    }
+    .pbi-tab:last-child { border-right: none; }
+    .pbi-tab .tab-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: rgba(0,0,0,.08);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 800;
+      flex-shrink: 0;
+    }
+    .pbi-tab.active {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .pbi-tab.active .tab-num {
+      background: #f59e0b;
+      color: #fff;
+    }
+    .pbi-tab:hover:not(.active) {
+      background: #fffbeb;
+      color: #b45309;
+    }
+    .pbi-panel { display: none; }
+    .pbi-panel.active { display: block; }
+    .pbi-desc-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 14px;
+    }
+    .pbi-desc-box h4 {
+      font-size: .88rem;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pbi-desc-box p {
+      font-size: .8rem;
+      color: #78350f;
+      line-height: 1.7;
+    }
+    .pbi-kpi-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 10px;
+    }
+    .pbi-kpi {
+      font-size: .72rem;
+      font-weight: 600;
+      color: #92400e;
+      background: #fde68a;
+      border-radius: 50px;
+      padding: 3px 11px;
+    }
+
     /* ── Lightbox ── */
     .lightbox {
       display: none; position: fixed; inset: 0; z-index: 9999;
@@ -1297,21 +1382,81 @@
         <div class="st-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
         <h2>Power BI Dashboard</h2><div class="st-line"></div>
       </div>
+
+      <!-- Header -->
       <div class="pbi-head">
         <div class="pbi-ico">📊</div>
         <div>
-          <h3>Pool Villa Management — Data Dashboard</h3>
-          <p>Interactive live report from <strong>Pool Villa Management System</strong> project &mdash; built with Microsoft Power BI to visualize reservation data, occupancy trends, and management KPIs</p>
+          <h3>Pool Villa Management System &mdash; Data Reports</h3>
+          <p>2 Interactive reports built with Microsoft Power BI &middot; Click a tab to switch between reports</p>
         </div>
       </div>
-      <div class="pbi-frame">
-        <iframe
-          title="Pattarapong — Power BI Dashboard"
-          src="https://app.powerbi.com/view?r=eyJrIjoiMjhiNGMwNDAtYTFmYy00Zjg0LTgxNTgtMjI3MjFjYzEzMTVlIiwidCI6ImZkMjA2NzE1LTc1MDktNGFlNS05Yjk2LTc2YmI5Nzg4NmE4NCIsImMiOjEwfQ%3D%3D"
-          allowFullScreen="true"
-          loading="lazy">
-        </iframe>
+
+      <!-- Tabs -->
+      <div class="pbi-tabs">
+        <button class="pbi-tab active" onclick="switchPbi(0)" id="pbi-tab-0">
+          <span class="tab-num">1</span>
+          <span>Product &amp; Service</span>
+        </button>
+        <button class="pbi-tab" onclick="switchPbi(1)" id="pbi-tab-1">
+          <span class="tab-num">2</span>
+          <span>Facility</span>
+        </button>
       </div>
+
+      <!-- Report 1: Product & Service -->
+      <div class="pbi-panel active" id="pbi-panel-0">
+        <div class="pbi-desc-box">
+          <h4>🛋️ Report 1 &mdash; Product &amp; Service of Pool Villa</h4>
+          <p>
+            รายงานแสดงผลประกอบการ โดยพิจารณา<strong>พฤติกรรมการซื้อ Product และ Service ของลูกค้า</strong>,
+            ประเภทลูกค้าที่มีผลต่อการซื้อ Product และ Service ในแต่ละสาขาและช่วงเวลา
+          </p>
+          <div class="pbi-kpi-row">
+            <span class="pbi-kpi">💰 Revenue Analysis</span>
+            <span class="pbi-kpi">👥 Customer Segmentation</span>
+            <span class="pbi-kpi">🛝 Product Performance</span>
+            <span class="pbi-kpi">📅 Time Period Trends</span>
+            <span class="pbi-kpi">🏢 Branch Comparison</span>
+          </div>
+        </div>
+        <div class="pbi-frame">
+          <iframe
+            title="Pool Villa — Product &amp; Service Report"
+            src="https://app.powerbi.com/view?r=eyJrIjoiMjhiNGMwNDAtYTFmYy00Zjg0LTgxNTgtMjI3MjFjYzEzMTVlIiwidCI6ImZkMjA2NzE1LTc1MDktNGFlNS05Yjk2LTc2YmI5Nzg4NmE4NCIsImMiOjEwfQ%3D%3D"
+            allowFullScreen="true"
+            loading="lazy">
+          </iframe>
+        </div>
+      </div>
+
+      <!-- Report 2: Facility -->
+      <div class="pbi-panel" id="pbi-panel-1">
+        <div class="pbi-desc-box">
+          <h4>🏊 Report 2 &mdash; Facility of Pool Villa</h4>
+          <p>
+            รายงานแสดง <strong>3 อันดับสาขาที่ทำกำไรได้มากที่สุดจากการปล่อยเช่า Facility</strong>,
+            ผลประกอบการโดยพิจารณาพฤติกรรมการเช่า Facility ของลูกค้า,
+            และประเภทลูกค้าที่มีผลต่อการเช่า Facility แต่ละประเภท ในแต่ละสาขาและช่วงเวลา
+          </p>
+          <div class="pbi-kpi-row">
+            <span class="pbi-kpi">🏆 Top 3 Branches</span>
+            <span class="pbi-kpi">🏢 Facility Revenue</span>
+            <span class="pbi-kpi">👥 Customer Type Analysis</span>
+            <span class="pbi-kpi">📅 Time Period Trends</span>
+            <span class="pbi-kpi">🔑 Facility Type Breakdown</span>
+          </div>
+        </div>
+        <div class="pbi-frame">
+          <iframe
+            title="Pool Villa — Facility Report"
+            src="https://app.powerbi.com/view?r=eyJrIjoiOTg2ZDg0MWEtM2JkZC00MzBkLTg5MWItY2E2ZjkyN2NjODMxIiwidCI6ImZkMjA2NzE1LTc1MDktNGFlNS05Yjk2LTc2YmI5Nzg4NmE4NCIsImMiOjEwfQ%3D%3D"
+            allowFullScreen="true"
+            loading="lazy">
+          </iframe>
+        </div>
+      </div>
+
     </section>
 
     <!-- Contact -->
@@ -1363,6 +1508,16 @@
   </div>
 
   <script>
+    /* Power BI tab switcher */
+    function switchPbi(idx) {
+      document.querySelectorAll('.pbi-tab').forEach(function(t, i) {
+        t.classList.toggle('active', i === idx);
+      });
+      document.querySelectorAll('.pbi-panel').forEach(function(p, i) {
+        p.classList.toggle('active', i === idx);
+      });
+    }
+
     /* Lightbox */
     function openLb(src, title, sub) {
       document.getElementById('lb-img').src = src;
