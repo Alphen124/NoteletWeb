@@ -497,6 +497,16 @@
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 14px;
     }
+    .iot-gallery {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .iot-gallery .gal-item {
+      aspect-ratio: 1.1 / 1;
+      border-radius: 8px;
+    }
     .opj-card {
       background: var(--card);
       border-radius: var(--radius);
@@ -1275,6 +1285,41 @@
             <div class="opj-name">SAP Build Apps</div>
             <p class="opj-desc">Low-code application development using SAP Build Apps platform. Includes UI/UX design and backend service integration via SAP Analytics Cloud training.</p>
             <div class="tag-row"><span class="tag">SAP Build Apps</span><span class="tag">Low-Code</span><span class="tag">SAP Analytics</span></div>
+          </div>
+        </div>
+
+        <div class="opj-card">
+          <div class="opj-banner" style="background:linear-gradient(135deg,#0f766e,#115e59)">🌬️</div>
+          <div class="opj-body">
+            <div class="opj-name">Smart Air Purifier</div>
+            <p class="opj-desc">Smart air purification system with sensor monitoring for temperature, PM2.5, smoke, vent, and humidity. Designed for automated control and real-time air quality awareness.</p>
+            <div class="tag-row">
+              <span class="tag">IoT</span>
+              <span class="tag">Sensors</span>
+              <span class="tag">Air Quality</span>
+              <span class="tag">Automation</span>
+            </div>
+            <div class="iot-gallery">
+              <div class="gal-item" onclick="openLb('/img/cv/494cc04b-2b1e-4784-9ada-8848c8b131f8.jpg','Smart Air Purifier Demo','IoT system overview')">
+                <img src="/img/cv/494cc04b-2b1e-4784-9ada-8848c8b131f8.jpg" alt="Smart Air Purifier IoT view 1" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                <div class="gal-placeholder" style="display:none">
+                  <div class="ph-ico">📷</div>
+                  <div class="ph-name">IoT Photo</div>
+                </div>
+                <div class="gal-overlay"><div class="gal-caption"><strong>IoT View 1</strong><small>System overview</small></div></div>
+              </div>
+              <div class="gal-item" onclick="openLb('/img/cv/6d9a1042-7da3-46d9-8748-468d9a20d1de.jpg','Smart Air Purifier Prototype','Sensor and fan module')">
+                <img src="/img/cv/6d9a1042-7da3-46d9-8748-468d9a20d1de.jpg" alt="Smart Air Purifier IoT view 2" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                <div class="gal-placeholder" style="display:none">
+                  <div class="ph-ico">📷</div>
+                  <div class="ph-name">IoT Photo</div>
+                </div>
+                <div class="gal-overlay"><div class="gal-caption"><strong>IoT View 2</strong><small>Fan &amp; sensor module</small></div></div>
+              </div>
+            </div>
+            <div style="margin-top:10px;">
+              <a href="https://www.youtube.com/watch?v=ySAJG4Ct5mc" target="_blank" rel="noopener noreferrer" style="display:inline-block;font-size:.74rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:6px 10px;border-radius:999px;">▶ View Demo</a>
+            </div>
           </div>
         </div>
       </div>
